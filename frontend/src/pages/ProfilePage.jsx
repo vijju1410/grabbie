@@ -146,15 +146,16 @@ const ProfilePage = () => {
         data.append("profileImage", profileImageFile);
       }
 
-      const res = await axios.put(`${API}/api/users/profile`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.put(
+  `${API}/api/users/profile`,
+  data,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
       setUser(res.data.user);
       setEditMode(false);
