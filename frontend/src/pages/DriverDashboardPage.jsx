@@ -27,6 +27,7 @@ const DriverDashboardPage = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [profile, setProfile] = useState(null);
+const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [selectedMarker, setSelectedMarker] = useState(null); // for map InfoWindow
 
@@ -605,7 +606,23 @@ const EarningsSection = () => (
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <aside className={`bg-white shadow-md transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+      {mobileMenuOpen && (
+  <div
+    className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
+    onClick={() => setMobileMenuOpen(false)}
+  />
+)}
+     <aside
+  className={`
+    fixed md:static z-40 top-0 left-0 h-full bg-white shadow-md
+    transition-transform duration-300
+    ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0
+    ${sidebarCollapsed ? "md:w-16" : "md:w-64"}
+    w-64
+  `}
+>
+
         <div className="flex items-center justify-between p-4 border-b">
           <span className="font-bold text-orange-600">{!sidebarCollapsed && "DeliveryPro"}</span>
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600">{sidebarCollapsed ? "➡" : "⬅"}</button>
@@ -616,6 +633,7 @@ const EarningsSection = () => (
       key={item.id}
       onClick={() => {
         setActiveSection(item.id);
+        setMobileMenuOpen(false);
         setSidebarCollapsed(true); // ✅ FIX
       }}
       className={`flex items-center p-3 hover:bg-orange-50 ${
@@ -632,7 +650,14 @@ const EarningsSection = () => (
 
       </aside>
       <main className="flex-1 flex flex-col">
-        <header className="bg-white shadow p-4 flex justify-between">
+        <header className="bg-white shadow p-4 flex justify-between items-center">
+  <button
+    className="md:hidden text-2xl"
+    onClick={() => setMobileMenuOpen(true)}
+  >
+    ☰
+  </button>
+
           <h1 className="text-lg font-semibold">Driver Dashboard</h1>
           <div className="flex items-center space-x-4">
             <div className="relative">

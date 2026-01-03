@@ -70,18 +70,7 @@ const [currentPage, setCurrentPage] = useState(1);
   avgRating: "0.0",
   totalReviews: 0
 });
-const fetchVendorRating = async () => {
-  if (!user._id) return;
-  try {
-    const res = await axios.get(
-      `${BACKEND_BASE}/api/orders/vendor/${user._id}/ratings`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setVendorRating(res.data);
-  } catch (err) {
-    console.error("Failed to fetch vendor rating", err);
-  }
-};
+
 const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
 const paginatedProducts = useMemo(() => {
@@ -176,6 +165,19 @@ daily[date].revenue = Number(
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const token = localStorage.getItem('token');
 
+  const fetchVendorRating = async () => {
+  if (!user._id) return;
+  try {
+    const res = await axios.get(
+      `${BACKEND_BASE}/api/orders/vendor/${user._id}/ratings`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setVendorRating(res.data);
+  } catch (err) {
+    console.error("Failed to fetch vendor rating", err);
+  }
+};
+
   // --- Fetch vendor profile ---
   useEffect(() => {
     const fetchVendor = async () => {
@@ -205,7 +207,9 @@ useEffect(() => {
   fetchCategories();
 }, []);
 
-
+useEffect(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+}, [activeTab]);
   // --- Fetch functions ---
   const fetchProducts = async () => {
   if (!vendor?._id) return;
@@ -904,7 +908,8 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-4 md:p-8">
+     <div className="flex-1 p-4 pt-16 md:pt-8 md:p-8">
+
           {/* Mobile Sidebar Toggle Button */}
 <button
   onClick={() => setSidebarOpen(true)}
@@ -1358,8 +1363,7 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
 )}
 
 
-
-     {activeTab === 'customers' && (
+{activeTab === 'customers' && (
   <div className="bg-white rounded-xl shadow-md p-6">
     <h1 className="text-3xl font-bold text-gray-900 mb-6">My Customers</h1>
 
@@ -1367,68 +1371,42 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
       <p className="text-gray-600">No customers have placed orders yet.</p>
     ) : (
       <>
-         <table className="min-w-[600px] border-separate border-spacing-y-2">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
-              <th className="px-6 py-3">Customer Name</th>
-              <th className="px-6 py-3">Email</th>
-              <th className="px-6 py-3">Phone</th>
-              <th className="px-6 py-3 text-right">Total Orders</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {paginatedCustomers.map((customer) => (
-              <tr key={customer.id} className="bg-white shadow-sm rounded-lg">
-                <td className="px-6 py-4 font-medium">{customer.name}</td>
-                <td className="px-6 py-4">{customer.email}</td>
-                <td className="px-6 py-4">{customer.phone || "N/A"}</td>
-                <td className="px-6 py-4 text-right font-semibold">
-                  {customer.orders}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-[600px] border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3">Customer Name</th>
+                <th className="px-6 py-3">Email</th>
+                <th className="px-6 py-3">Phone</th>
+                <th className="px-6 py-3 text-right">Total Orders</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {paginatedCustomers.map((customer) => (
+                <tr key={customer.id} className="bg-white shadow-sm rounded-lg">
+                  <td className="px-6 py-4 font-medium">{customer.name}</td>
+                  <td className="px-6 py-4">{customer.email}</td>
+                  <td className="px-6 py-4">{customer.phone || "N/A"}</td>
+                  <td className="px-6 py-4 text-right font-semibold">
+                    {customer.orders}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {totalCustomerPages > 1 && (
-  <div className="w-full flex justify-center items-center gap-2 mt-10 pt-4">
-    <button
-      disabled={customerPage === 1}
-      onClick={() => setCustomerPage(p => p - 1)}
-      className="px-3 py-1 border rounded disabled:opacity-50"
-    >
-      Prev
-    </button>
-
-    {[...Array(totalCustomerPages)].map((_, i) => (
-      <button
-        key={i}
-        onClick={() => setCustomerPage(i + 1)}
-        className={`px-3 py-1 rounded border ${
-          customerPage === i + 1
-            ? "bg-orange-500 text-white"
-            : "hover:bg-gray-100"
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
-
-    <button
-      disabled={customerPage === totalCustomerPages}
-      onClick={() => setCustomerPage(p => p + 1)}
-      className="px-3 py-1 border rounded disabled:opacity-50"
-    >
-      Next
-    </button>
-  </div>
-)}
-
+          <div className="w-full flex justify-center items-center gap-2 mt-10 pt-4">
+            {/* pagination buttons */}
+          </div>
+        )}
       </>
     )}
   </div>
 )}
+
 
 
           </div>
