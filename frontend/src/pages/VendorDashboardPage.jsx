@@ -1397,11 +1397,40 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
           </table>
         </div>
 
-        {totalCustomerPages > 1 && (
-          <div className="w-full flex justify-center items-center gap-2 mt-10 pt-4">
-            {/* pagination buttons */}
-          </div>
-        )}
+      {totalCustomerPages > 1 && (
+  <div className="w-full flex justify-center items-center gap-2 mt-10 pt-4">
+    <button
+      disabled={customerPage === 1}
+      onClick={() => setCustomerPage(p => p - 1)}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      Prev
+    </button>
+
+    {[...Array(totalCustomerPages)].map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCustomerPage(i + 1)}
+        className={`px-3 py-1 rounded border ${
+          customerPage === i + 1
+            ? "bg-orange-500 text-white"
+            : "hover:bg-gray-100"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      disabled={customerPage === totalCustomerPages}
+      onClick={() => setCustomerPage(p => p + 1)}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
+)}
+
       </>
     )}
   </div>
