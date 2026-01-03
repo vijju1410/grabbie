@@ -193,6 +193,10 @@ useEffect(() => {
   }
 }, [activeTab]);
 
+useEffect(() => {
+  fetchCategories();
+}, []);
+
 
   // --- Fetch functions ---
   const fetchProducts = async () => {

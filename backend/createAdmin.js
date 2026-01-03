@@ -1,33 +1,34 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('./models/user');
-require('dotenv').config();
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const User = require("./models/user");
+require("dotenv").config();
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGO_URI);
 
 async function createAdmin() {
   try {
-    // 1️⃣ Delete any existing admin
-    await User.deleteMany({ role: 'admin' });
-    console.log('Existing admin(s) deleted');
+    // ✅ Check if admin already exists
+    const existingAdmin = await User.findOne({ role: "admin" });
 
-    // 2️⃣ Hash the password for new admin
-    const hashedPassword = await bcrypt.hash('admin', 10); // change password as needed
+    if (existingAdmin) {
+      console.log("✅ Admin already exists:", existingAdmin.email);
+      return;
+    }
 
-    // 3️⃣ Create new admin
+    const hashedPassword = await bcrypt.hash("admin", 10);
+
     const admin = new User({
-      name: 'Super Admin',           // change name if needed
-      email: 'admin@gmail.com',
-      phone:'790983889',   // change email if needed
+      name: "Super Admin",
+      email: "admin@gmail.com",
+      phone: "+91790983889",
       password: hashedPassword,
-      role: 'admin'
+      role: "admin",
     });
 
     await admin.save();
-    console.log('New admin created successfully');
-
+    console.log("✅ Admin created successfully");
   } catch (err) {
-    console.error('Error creating admin:', err);
+    console.error("❌ Error creating admin:", err);
   } finally {
     mongoose.connection.close();
   }
