@@ -5,42 +5,43 @@ const CartContext = createContext();
 const API = process.env.REACT_APP_API_URL;
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    const saved = localStorage.getItem("cart");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const token = localStorage.getItem("token");
 
-  // Fetch cart from backend
-  const fetchCart = async () => {
-    if (!token) return;
-    try {
-      const res = await axios.get(`${API}/api/cart`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCart(res.data.products || []);
-    } catch (err) {
-      console.error("Failed to fetch cart", err);
-    }
-  };
-
-  // Clear cart after order
-  const clearCart = async () => {
-    setCart([]); // frontend clear
-    try {
-      await axios.post(
-        `${API}/api/cart/clear`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (err) {
-      console.error("Failed to clear cart on backend", err);
-    }
-  };
-
+  // Fetch cart once auth is ready
   useEffect(() => {
-    fetchCart();
+    if (!token) return;
+
+    axios
+      .get(`${API}/api/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const products = res.data.products || [];
+        setCart(products);
+        localStorage.setItem("cart", JSON.stringify(products));
+      })
+      .catch(() => {});
   }, [token]);
 
+  const clearCart = async () => {
+    setCart([]);
+    localStorage.removeItem("cart");
+    if (!token) return;
+
+    await axios.post(
+      `${API}/api/cart/clear`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  };
+
   return (
-    <CartContext.Provider value={{ cart, setCart, fetchCart, clearCart }}>
+    <CartContext.Provider value={{ cart, setCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );
