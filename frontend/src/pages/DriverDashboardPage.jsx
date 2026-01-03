@@ -432,68 +432,11 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     </span>
   </button>
 );
-const EditProfileModal = ({ open, onClose }) => {
-  const [name, setName] = useState(profile?.name || "");
-  const [phone, setPhone] = useState(profile?.phone || "");
 
-  const saveProfile = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${API}/api/users/profile`,
-        { name, phone },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Profile updated");
-      onClose();
-      window.location.reload();
-    } catch {
-      toast.error("Failed to update profile");
-    }
-  };
 
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-slideUp">
-        <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
-
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 border rounded-lg mb-3"
-          placeholder="Full Name"
-        />
-
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full p-3 border rounded-lg mb-4"
-          placeholder="Phone"
-        />
-
-        <div className="flex gap-3">
-          <button
-            onClick={saveProfile}
-            className="flex-1 bg-orange-500 text-white py-2 rounded-lg"
-          >
-            Save
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 border py-2 rounded-lg"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+ 
  const ProfileSection = () => {
-  const [showEditProfile, setShowEditProfile] = useState(false);
+  
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -598,12 +541,7 @@ const EditProfileModal = ({ open, onClose }) => {
         <div className="bg-white rounded-2xl shadow p-4 space-y-3">
           <h3 className="text-base font-semibold">Account</h3>
 
-          <button
-            onClick={() => setShowEditProfile(true)}
-            className="w-full py-2.5 rounded-xl border hover:bg-gray-100 text-sm"
-          >
-            ✏️ Edit Profile
-          </button>
+         
 
           <button
             onClick={() => {
@@ -618,10 +556,7 @@ const EditProfileModal = ({ open, onClose }) => {
       </div>
 
       {/* Modal */}
-      <EditProfileModal
-        open={showEditProfile}
-        onClose={() => setShowEditProfile(false)}
-      />
+      
     </div>
   );
 };

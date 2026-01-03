@@ -215,6 +215,109 @@ useEffect(() => {
           </div>
         </div>
       </div>
+            {/* ================= MOBILE MENU ================= */}
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t shadow">
+          <nav className="flex flex-col px-4 py-4 space-y-4">
+
+            {/* CUSTOMER LINKS */}
+            {isAuthenticated && isCustomer && (
+              <>
+                <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
+
+                <button
+                  onClick={() => setCategoryOpen(!categoryOpen)}
+                  className="text-left"
+                >
+                  Categories
+                </button>
+
+                {categoryOpen && (
+                  <div className="ml-4 space-y-2">
+                    {categories.map((c) => (
+                      <Link
+                        key={c._id}
+                        to={`/category/${c.name}`}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setCategoryOpen(false);
+                        }}
+                        className="block text-gray-600"
+                      >
+                        {c.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                <Link to="/about" onClick={() => setMenuOpen(false)}>
+                  About Us
+                </Link>
+
+                <Link to="/orders" onClick={() => setMenuOpen(false)}>
+                  My Orders
+                </Link>
+
+                <Link to="/cart" onClick={() => setMenuOpen(false)}>
+                  Cart ({cart.length})
+                </Link>
+              </>
+            )}
+
+            {/* ROLE BASED */}
+            {isAuthenticated && userRole === "vendor" && (
+              <Link to="/vendor" onClick={() => setMenuOpen(false)}>
+                Vendor Dashboard
+              </Link>
+            )}
+
+            {isAuthenticated && userRole === "driver" && (
+              <Link to="/driver" onClick={() => setMenuOpen(false)}>
+                Driver Dashboard
+              </Link>
+            )}
+
+            {isAuthenticated && userRole === "admin" && (
+              <Link to="/admin" onClick={() => setMenuOpen(false)}>
+                Admin Panel
+              </Link>
+            )}
+
+            {/* AUTH */}
+            {!isAuthenticated ? (
+              <>
+                <Link to="/login" onClick={() => setMenuOpen(false)}>
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="bg-orange-500 text-white px-4 py-2 rounded text-center"
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/profile" onClick={() => setMenuOpen(false)}>
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMenuOpen(false);
+                  }}
+                  className="text-left text-red-600"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+
+          </nav>
+        </div>
+      )}
+
     </header>
   );
 };
