@@ -611,17 +611,25 @@ const EarningsSection = () => (
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600">{sidebarCollapsed ? "➡" : "⬅"}</button>
         </div>
         <nav className="flex flex-col mt-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`flex items-center p-3 hover:bg-orange-50 ${activeSection === item.id ? "bg-orange-100 text-orange-700" : "text-gray-700"}`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
+  {menuItems.map((item) => (
+    <button
+      key={item.id}
+      onClick={() => {
+        setActiveSection(item.id);
+        setSidebarCollapsed(true); // ✅ FIX
+      }}
+      className={`flex items-center p-3 hover:bg-orange-50 ${
+        activeSection === item.id
+          ? "bg-orange-100 text-orange-700"
+          : "text-gray-700"
+      }`}
+    >
+      <span className="text-xl">{item.icon}</span>
+      {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+    </button>
+  ))}
+</nav>
+
       </aside>
       <main className="flex-1 flex flex-col">
         <header className="bg-white shadow p-4 flex justify-between">

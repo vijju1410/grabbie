@@ -12,8 +12,10 @@ import {
   TrendingUp,
   Star,
   Clock,
-  X
+  X,
+  Menu
 } from 'lucide-react';
+
 import axios from 'axios';
 import toast from "react-hot-toast";
 
@@ -39,6 +41,12 @@ const VendorDashboardPage = () => {
   const [uploadProofOrder, setUploadProofOrder] = useState(null);
   const [uploadFile, setUploadFile] = useState(null);
   const [timelineOrder, setTimelineOrder] = useState(null);
+
+
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
 
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -773,8 +781,30 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
+        {/* Mobile backdrop overlay */}
+{sidebarOpen && (
+  <div
+    className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
+    onClick={() => setSidebarOpen(false)}
+  />
+)}
+
         {/* Sidebar */}
-        <div className="w-64 bg-white shadow-lg min-h-screen">
+       {/* Sidebar */}
+<div
+  className={`fixed md:static z-40 top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300
+  ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+>
+  {/* Close button (mobile only) */}
+  <button
+    onClick={() => setSidebarOpen(false)}
+    className="md:hidden absolute top-4 right-4 text-gray-600"
+  >
+    <X />
+  </button>
+
+
+
           <div className="p-6">
             <div className="flex items-center space-x-3 mb-8">
               <img
@@ -793,18 +823,97 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
               </div>
             </div>
 
-            <nav className="space-y-2">
-              <button onClick={() => setActiveTab('dashboard')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${activeTab === 'dashboard' ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-100'}`}><Package className="w-5 h-5" /><span>Dashboard</span></button>
-              <button onClick={() => setActiveTab('products')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${activeTab === 'products' ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-100'}`}><Package className="w-5 h-5" /><span>Products</span></button>
-              <button onClick={() => setActiveTab('orders')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${activeTab === 'orders' ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-100'}`}><Clock className="w-5 h-5" /><span>Orders</span></button>
-              <button onClick={() => setActiveTab('analytics')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${activeTab === 'analytics' ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-100'}`}><TrendingUp className="w-5 h-5" /><span>Analytics</span></button>
-              <button onClick={() => setActiveTab('customers')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${activeTab === 'customers' ? 'bg-orange-50 text-orange-700' : 'text-gray-700 hover:bg-gray-100'}`}><Users className="w-5 h-5" /><span>Customers</span></button>
-            </nav>
+       <nav className="space-y-2">
+  <button
+    onClick={() => {
+      setActiveTab('dashboard');
+      setSidebarOpen(false);
+    }}
+    className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${
+      activeTab === 'dashboard'
+        ? 'bg-orange-50 text-orange-700'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`}
+  >
+    <Package className="w-5 h-5" />
+    <span>Dashboard</span>
+  </button>
+
+  <button
+    onClick={() => {
+      setActiveTab('products');
+      setSidebarOpen(false);
+    }}
+    className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${
+      activeTab === 'products'
+        ? 'bg-orange-50 text-orange-700'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`}
+  >
+    <Package className="w-5 h-5" />
+    <span>Products</span>
+  </button>
+
+  <button
+    onClick={() => {
+      setActiveTab('orders');
+      setSidebarOpen(false);
+    }}
+    className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${
+      activeTab === 'orders'
+        ? 'bg-orange-50 text-orange-700'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`}
+  >
+    <Clock className="w-5 h-5" />
+    <span>Orders</span>
+  </button>
+
+  <button
+    onClick={() => {
+      setActiveTab('analytics');
+      setSidebarOpen(false);
+    }}
+    className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${
+      activeTab === 'analytics'
+        ? 'bg-orange-50 text-orange-700'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`}
+  >
+    <TrendingUp className="w-5 h-5" />
+    <span>Analytics</span>
+  </button>
+
+  <button
+    onClick={() => {
+      setActiveTab('customers');
+      setSidebarOpen(false);
+    }}
+    className={`flex w-full items-center space-x-3 px-4 py-3 rounded-lg ${
+      activeTab === 'customers'
+        ? 'bg-orange-50 text-orange-700'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`}
+  >
+    <Users className="w-5 h-5" />
+    <span>Customers</span>
+  </button>
+</nav>
+
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8">
+          {/* Mobile Sidebar Toggle Button */}
+<button
+  onClick={() => setSidebarOpen(true)}
+  className="md:hidden mb-4 bg-white p-2 rounded shadow"
+>
+  <Menu className="w-6 h-6" />
+</button>
+
+
           <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && (
               <>

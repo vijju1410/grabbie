@@ -194,18 +194,88 @@ const API = process.env.REACT_APP_API_URL;
               </button>
             </div>
 
-            <SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} sidebarOpen={sidebarOpen} />
-  <SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} sidebarOpen={sidebarOpen} />
+            <SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+   <SidebarItem
+  icon={<Users />}
+  label="Customers"
+  active={active === "users"}
+  onClick={() => setActive("users")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
 
-            <SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} sidebarOpen={sidebarOpen} />
-  <SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} sidebarOpen={sidebarOpen} />
-        <SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} sidebarOpen={sidebarOpen} />
+<SidebarItem
+  icon={<Building2 />}
+  label="Approved Vendors"
+  active={active === "approvedVendors"}
+  onClick={() => setActive("approvedVendors")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
 
-            <SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} sidebarOpen={sidebarOpen} />
+<SidebarItem
+  icon={<Building2 />}
+  label="Rejected Vendors"
+  active={active === "rejectedVendors"}
+  onClick={() => setActive("rejectedVendors")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<Building2 />}
+  label="Pending Vendors"
+  active={active === "vendors"}
+  onClick={() => setActive("vendors")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<Truck />}
+  label="Approved Drivers"
+  active={active === "approvedDrivers"}
+  onClick={() => setActive("approvedDrivers")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<Truck />}
+  label="Rejected Drivers"
+  active={active === "rejectedDrivers"}
+  onClick={() => setActive("rejectedDrivers")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<Truck />}
+  label="Pending Drivers"
+  active={active === "pendingDrivers"}
+  onClick={() => setActive("pendingDrivers")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<LayoutGrid />}
+  label="Categories"
+  active={active === "categories"}
+  onClick={() => setActive("categories")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
+<SidebarItem
+  icon={<Bell />}
+  label="Notifications"
+  active={active === "notifications"}
+  onClick={() => setActive("notifications")}
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+/>
+
 
 
           </div>
@@ -475,12 +545,23 @@ const API = process.env.REACT_APP_API_URL;
   };
 
   // ---------- COMPONENTS ----------
-  const SidebarItem = ({ icon, label, active, onClick, sidebarOpen }) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${active ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
-      <span className="w-5 h-5">{icon}</span>
-      {sidebarOpen && <span className="font-medium">{label}</span>}
-    </button>
-  );
+  const SidebarItem = ({ icon, label, active, onClick, sidebarOpen, setSidebarOpen }) => (
+  <button
+    onClick={() => {
+      onClick();
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false); // ✅ CLOSE SIDEBAR ON MOBILE
+      }
+    }}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+      active ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'
+    }`}
+  >
+    <span className="w-5 h-5">{icon}</span>
+    {sidebarOpen && <span className="font-medium">{label}</span>}
+  </button>
+);
+
 
   const StatCard = ({ title, value, color }) => (
     <div className={`bg-gradient-to-r ${color} text-white p-5 rounded-xl shadow flex flex-col`}>
