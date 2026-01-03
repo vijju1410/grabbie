@@ -952,7 +952,8 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
                       </div>
 
                       <div className="overflow-x-auto">
-                        <table className="min-w-full border-separate border-spacing-y-2">
+  <table className="min-w-[700px] border-separate border-spacing-y-2">
+
   <thead>
     <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
       <th className="px-6 py-3">Product</th>
@@ -1096,8 +1097,9 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-separate border-spacing-y-2">
+                 <div className="overflow-x-auto">
+  <table className="min-w-[700px] border-separate border-spacing-y-2">
+
   <thead>
     <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
       <th className="px-6 py-3">Product</th>
@@ -1365,7 +1367,7 @@ if (order.status === "Delivered" || order.status === "Cancelled") {
       <p className="text-gray-600">No customers have placed orders yet.</p>
     ) : (
       <>
-        <table className="min-w-full border-separate border-spacing-y-2">
+         <table className="min-w-[600px] border-separate border-spacing-y-2">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
               <th className="px-6 py-3">Customer Name</th>
