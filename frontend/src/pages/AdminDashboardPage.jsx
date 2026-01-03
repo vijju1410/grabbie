@@ -18,8 +18,6 @@ const API = process.env.REACT_APP_API_URL;
   const AdminDashboardPage = () => {
     const [active, setActive] = useState("dashboard");
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
     const [users, setUsers] = useState([]);
     const [drivers, setDrivers] = useState([]);
     const [pendingVendors, setPendingVendors] = useState([]);
@@ -173,24 +171,8 @@ const API = process.env.REACT_APP_API_URL;
     return (
       <div className="min-h-screen bg-slate-50 flex">
         {/* ---------- SIDEBAR ---------- */}
-        {mobileMenuOpen && (
-  <div
-    className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
-    onClick={() => setMobileMenuOpen(false)}
-  />
-)}
-
-       <aside
-  className={`
-    fixed md:static top-0 left-0 z-40 h-full bg-white shadow-md
-    transition-transform duration-300
-    ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-    md:translate-x-0
-    ${sidebarOpen ? "md:w-72" : "md:w-16"}
-    w-72 p-5 flex flex-col justify-between
-  `}
->
-   <div>
+        <aside className={`bg-white shadow-md min-h-screen p-5 flex flex-col justify-between transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-16'}`}>
+          <div>
             <div className="flex items-center justify-between mb-10">
               {sidebarOpen && (
                 <div className="flex items-center gap-3">
@@ -207,11 +189,7 @@ const API = process.env.REACT_APP_API_URL;
                   <h1 className="text-2xl font-bold text-slate-800">Admin Panel</h1>
                 </div>
               )}
-              <button
-  className="md:hidden"
-  onClick={() => setMobileMenuOpen(false)}
->
-
+              <button className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
                 {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
@@ -567,14 +545,13 @@ const API = process.env.REACT_APP_API_URL;
   };
 
   // ---------- COMPONENTS ----------
-  const SidebarItem = ({ icon, label, active, onClick, sidebarOpen, setSidebarOpen,setMobileMenuOpen }) => (
+  const SidebarItem = ({ icon, label, active, onClick, sidebarOpen, setSidebarOpen }) => (
   <button
     onClick={() => {
       onClick();
       if (window.innerWidth < 768) {
-  setMobileMenuOpen(false);
-}
-
+        setSidebarOpen(false); // ✅ CLOSE SIDEBAR ON MOBILE
+      }
     }}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
       active ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'
