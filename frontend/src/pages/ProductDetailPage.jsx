@@ -77,7 +77,8 @@ const ProductDetailPage = () => {
     try {
       await axios.post(
         `${API}/api/cart/add`,
-        { productId: product._id, quantity },
+       { productId: product._id, quantity: Number(quantity) },
+
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchCart();
@@ -106,7 +107,8 @@ const ProductDetailPage = () => {
     try {
       await axios.post(
         `${API}/api/cart/add`,
-        { productId: product._id, quantity },
+      { productId: product._id, quantity: Number(quantity) },
+
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchCart();
@@ -167,23 +169,25 @@ const ProductDetailPage = () => {
 
         {/* Quantity Selector */}
         <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="px-3 py-1 bg-gray-200 rounded"
-          >
-            −
-          </button>
+         <button
+  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+  className="px-3 py-1 bg-gray-200 rounded"
+>
+  −
+</button>
+
 
           <span className="font-semibold">{quantity}</span>
 
-          <button
-            onClick={() =>
-              setQuantity((q) => Math.min(product.stock, q + 1))
-            }
-            className="px-3 py-1 bg-gray-200 rounded"
-          >
-            +
-          </button>
+         <button
+  onClick={() =>
+    setQuantity((q) => Math.min(10, q + 1))
+  }
+  className="px-3 py-1 bg-gray-200 rounded"
+>
+  +
+</button>
+
         </div>
 
         {/* Actions */}
