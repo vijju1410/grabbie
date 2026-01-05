@@ -4,26 +4,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useCart } from "../components/CartContext";
-import { useLocation } from "react-router-dom";
-
-
-
 const API = process.env.REACT_APP_API_URL;
 
 const CheckoutPage = () => {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
-const location = useLocation();
-const buyNowItem = location.state?.buyNowItem;
-
-const effectiveCart = buyNowItem
-  ? [{
-      productId: buyNowItem.product,
-      quantity: buyNowItem.quantity,
-    }]
-  : cart;
-
 
 const loadRazorpay = () => {
   return new Promise((resolve) => {
@@ -175,13 +161,12 @@ try {
 
   /* ================= CART TOTALS ================= */
   const itemsTotal = useMemo(() => {
-    return effectiveCart.reduce(
+    return cart.reduce(
       (sum, item) =>
         sum + (item.productId.price || 0) * (item.quantity || 1),
       0
     );
-  }, [effectiveCart]);
-
+  }, [cart]);
 
   const serviceCharge = useMemo(
     () => +(itemsTotal * SERVICE_CHARGE_PERCENT) / 100,
@@ -238,14 +223,14 @@ try {
     if (!country.trim()) e.country = "Country required";
 
     setErrors(e);
-setIsFormValid(Object.keys(e).length === 0 && effectiveCart.length > 0);
+    setIsFormValid(Object.keys(e).length === 0 && cart.length > 0);
   };
 
   // 🔹 LIVE validation
   useEffect(() => {
-  validateFields();
-}, [formData, effectiveCart]);
-
+    validateFields();
+    // eslint-disable-next-line
+  }, [formData, cart]);
 
   /* ================= PLACE ORDER ================= */
   const handleOrder = async () => {
@@ -277,11 +262,10 @@ setIsFormValid(Object.keys(e).length === 0 && effectiveCart.length > 0);
       await axios.post(
   `${API}/api/orders/place`,
         {
-          products: effectiveCart.map(item => ({
-  productId: item.productId._id,
-  quantity: item.quantity,
-})),
-
+          products: cart.map(item => ({
+            productId: item.productId._id,
+            quantity: item.quantity,
+          })),
           totalAmount: charges.grandTotal,
           deliveryDetails: {
             fullName: formData.name,
@@ -300,10 +284,7 @@ setIsFormValid(Object.keys(e).length === 0 && effectiveCart.length > 0);
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (!buyNowItem) {
-  await clearCart();
-}
-
+      await clearCart();
 
       Swal.fire({
         icon: "success",
@@ -403,8 +384,7 @@ setIsFormValid(Object.keys(e).length === 0 && effectiveCart.length > 0);
 
   {/* CART ITEMS */}
   <div className="space-y-3 mb-4">
-   {effectiveCart.map((item) => (
-
+    {cart.map((item) => (
       <div
         key={item.productId._id}
         className="flex gap-3 items-center border-b pb-2"
@@ -498,8 +478,7 @@ setIsFormValid(Object.keys(e).length === 0 && effectiveCart.length > 0);
         ? handleOnlinePayment
         : handleOrder
     }
-    disabled={!isFormValid || loading || effectiveCart.length === 0}
-
+    disabled={!isFormValid || loading || cart.length === 0}
     className={`mt-4 w-full py-3 rounded-lg font-semibold text-white ${
       !isFormValid || loading
         ? "bg-gray-400 cursor-not-allowed"
