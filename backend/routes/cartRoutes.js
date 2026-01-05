@@ -46,4 +46,27 @@ router.post('/remove', protect, async (req, res) => {
   res.json(cart);
 });
 
+router.post('/update', protect, async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  if (!quantity || quantity < 1) {
+    return res.status(400).json({ message: "Invalid quantity" });
+  }
+
+  const cart = await Cart.findOne({ userId: req.user._id });
+  if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+  const item = cart.products.find(
+    p => p.productId.toString() === productId
+  );
+
+  if (!item) return res.status(404).json({ message: "Item not found" });
+
+  item.quantity = Number(quantity); // ✅ FORCE NUMBER
+  await cart.save();
+
+  res.json(await cart.populate("products.productId"));
+});
+
+
 module.exports = router;

@@ -10,32 +10,25 @@ const CartPage = () => {
   const token = localStorage.getItem("token");
 
   /* ================= UPDATE QUANTITY ================= */
-  const updateQuantity = async (productId, amount, currentQty) => {
-    // ❌ Prevent less than 1
-    if (currentQty <= 1 && amount === -1) return;
+  const updateQuantity = async (productId, newQty) => {
+  if (newQty < 1 || newQty > 10) return;
 
-    // 🚫 Max limit reached
-    if (currentQty >= 10 && amount === 1) {
-      toast.error("Maximum quantity for this item is 10");
-      return;
-    }
+  try {
+    await fetch(`${API}/api/cart/update`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId, quantity: newQty }),
+    });
 
-    try {
-      await fetch(`${API}/api/cart/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId, quantity: amount }),
-      });
+    fetchCart();
+  } catch (err) {
+    toast.error("Failed to update quantity");
+  }
+};
 
-      fetchCart(); // ✅ Refresh cart
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update quantity");
-    }
-  };
 
   /* ================= REMOVE ITEM ================= */
   const removeItem = async (productId) => {
@@ -58,12 +51,16 @@ const CartPage = () => {
   };
 
   /* ================= TOTAL ================= */
-  const total = cart
-    .reduce(
-      (sum, item) => sum + item.productId.price * item.quantity,
-      0
-    )
-    .toFixed(2);
+const total = cart
+  .reduce(
+    (sum, item) =>
+      sum +
+      Number(item.productId?.price || 0) *
+      Number(item.quantity || 1),
+    0
+  )
+  .toFixed(2);
+
 
   /* ================= EMPTY CART ================= */
   if (cart.length === 0) {
@@ -140,34 +137,36 @@ const CartPage = () => {
 
               {/* QUANTITY CONTROLS */}
               <div className="flex items-center gap-3">
-                <button
-                  disabled={qty === 1}
-                  onClick={() =>
-                    updateQuantity(item.productId._id, -1, qty)
-                  }
-                  className={`px-3 py-1 rounded ${
-                    qty === 1
-                      ? "bg-gray-200 cursor-not-allowed opacity-50"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  -
-                </button>
+               <button
+  disabled={qty === 1}
+  onClick={() =>
+    updateQuantity(item.productId._id, qty - 1)
+  }
+  className={`px-3 py-1 rounded ${
+    qty === 1
+      ? "bg-gray-200 cursor-not-allowed opacity-50"
+      : "bg-gray-300"
+  }`}
+>
+  -
+</button>
 
-                <span className="font-semibold">{qty}</span>
+<span className="font-semibold">{qty}</span>
 
-                <button
-                  onClick={() =>
-                    updateQuantity(item.productId._id, 1, qty)
-                  }
-                  className={`px-3 py-1 rounded ${
-                    qty === 10
-                      ? "bg-gray-200"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  +
-                </button>
+<button
+  disabled={qty === 10}
+  onClick={() =>
+    updateQuantity(item.productId._id, qty + 1)
+  }
+  className={`px-3 py-1 rounded ${
+    qty === 10
+      ? "bg-gray-200 cursor-not-allowed opacity-50"
+      : "bg-gray-300"
+  }`}
+>
+  +
+</button>
+
               </div>
 
               {/* REMOVE */}
