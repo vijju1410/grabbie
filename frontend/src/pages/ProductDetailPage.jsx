@@ -16,7 +16,8 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { fetchCart } = useCart();
+  const { cart, fetchCart } = useCart();
+
   const token = localStorage.getItem("token");
 
   // ===============================
@@ -36,6 +37,19 @@ const ProductDetailPage = () => {
 
     fetchProduct();
   }, [id]);
+
+
+useEffect(() => {
+  if (product && cart.length > 0) {
+    const existingItem = cart.find(
+      (item) => item.productId?._id === product._id
+    );
+
+    if (existingItem) {
+      setQuantity(existingItem.quantity); // ✅ sync quantity
+    }
+  }
+}, [product, cart]);
 
   // ===============================
   // Fetch product rating (READ-ONLY)
@@ -128,6 +142,10 @@ const ProductDetailPage = () => {
   if (error) return <div className="p-6 text-red-500 text-center">{error}</div>;
   if (!product) return <div className="p-6 text-center">No product found</div>;
 
+const isInCart = cart.some(
+  (item) => item.productId?._id === product._id
+);
+
   return (
     <div className="max-w-5xl mx-auto p-6 grid md:grid-cols-2 gap-8">
       <Toaster position="top-center" />
@@ -168,46 +186,62 @@ const ProductDetailPage = () => {
         </p>
 
         {/* Quantity Selector */}
-        <div className="flex items-center gap-3 mb-4">
-         <button
-  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-  className="px-3 py-1 bg-gray-200 rounded"
->
-  −
-</button>
+       <div className="flex items-center gap-3 mb-4">
+  <button
+    disabled={quantity <= 1}
+    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+    className={`px-3 py-1 rounded ${
+      quantity <= 1
+        ? "bg-gray-200 cursor-not-allowed opacity-50"
+        : "bg-gray-300"
+    }`}
+  >
+    −
+  </button>
 
+  <span className="font-semibold">{quantity}</span>
 
-          <span className="font-semibold">{quantity}</span>
-
-         <button
-  onClick={() =>
-    setQuantity((q) => Math.min(10, q + 1))
-  }
-  className="px-3 py-1 bg-gray-200 rounded"
->
-  +
-</button>
-
-        </div>
+  <button
+    disabled={quantity >= 10}
+    onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+    className={`px-3 py-1 rounded ${
+      quantity >= 10
+        ? "bg-gray-200 cursor-not-allowed opacity-50"
+        : "bg-gray-300"
+    }`}
+  >
+    +
+  </button>
+</div>
 
         {/* Actions */}
         <div className="flex gap-4">
-          <button
-            onClick={addToCart}
-            disabled={product.stock === 0}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
-          >
-            Add to Cart
-          </button>
+  {isInCart ? (
+    <button
+      onClick={() => navigate("/cart")}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow"
+    >
+      Go to Cart
+    </button>
+  ) : (
+    <button
+      onClick={addToCart}
+      disabled={product.stock === 0}
+      className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
+    >
+      Add to Cart
+    </button>
+  )}
 
-          <button
-            onClick={buyNow}
-            disabled={product.stock === 0}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
-          >
-            Buy Now
-          </button>
-        </div>
+  <button
+    onClick={buyNow}
+    disabled={product.stock === 0}
+    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
+  >
+    Buy Now
+  </button>
+</div>
+
 
         {/* Vendor */}
         {product.vendorId?.name && (
