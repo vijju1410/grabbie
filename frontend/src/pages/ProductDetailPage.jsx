@@ -111,39 +111,29 @@ useEffect(() => {
   // ===============================
   // Buy now
   // ===============================
-  const buyNow = async () => {
-    if (!token) {
-      toast.error("Please login to continue");
-      navigate("/login");
-      return;
-    }
+ const buyNow = () => {
+  if (!token) {
+    toast.error("Please login to continue");
+    navigate("/login");
+    return;
+  }
 
-    try {
-      await axios.post(
-        `${API}/api/cart/add`,
-      { productId: product._id, quantity: Number(quantity) },
+  navigate("/checkout", {
+    state: {
+      buyNowItem: {
+        product,
+        quantity,
+      },
+    },
+  });
+};
 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchCart();
-      navigate("/checkout");
-    } catch (err) {
-      if (err.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        localStorage.removeItem("token");
-        navigate("/login");
-      } else {
-        toast.error("Failed to continue");
-      }
-    }
-  };
-
-  if (loading) return <div className="p-6 text-center">Loading...</div>;
-  if (error) return <div className="p-6 text-red-500 text-center">{error}</div>;
-  if (!product) return <div className="p-6 text-center">No product found</div>;
+if (loading) return <div className="p-6 text-center">Loading...</div>;
+if (error) return <div className="p-6 text-red-500 text-center">{error}</div>;
+if (!product) return null;
 
 const isInCart = cart.some(
-  (item) => item.productId?._id === product._id
+  (item) => item.productId?._id === product?._id
 );
 
   return (
