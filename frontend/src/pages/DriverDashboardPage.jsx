@@ -762,43 +762,89 @@ const DeliveryHistorySection = () => {
     onClick={() => setMobileMenuOpen(false)}
   />
 )}
-     <aside
+     {/* ✅ NEW SIDEBAR PASTE HERE */}
+<aside
   className={`
-    fixed md:static z-40 top-0 left-0 h-full bg-white shadow-md
-    transition-transform duration-300
-    ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-    md:translate-x-0
-    ${sidebarCollapsed ? "md:w-16" : "md:w-64"}
-    w-64
-  `}
+  fixed md:static z-40 top-0 left-0 h-full
+  bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900
+  text-gray-200
+  transition-all duration-300
+  ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+  md:translate-x-0
+  ${sidebarCollapsed ? "md:w-20" : "md:w-64"}
+  w-64
+`}
 >
 
-        <div className="flex items-center justify-between p-4 border-b">
-          <span className="font-bold text-orange-600">{!sidebarCollapsed && "DeliveryPro"}</span>
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-gray-600">{sidebarCollapsed ? "➡" : "⬅"}</button>
-        </div>
-        <nav className="flex flex-col mt-4">
-  {menuItems.map((item) => (
-    <button
-      key={item.id}
-      onClick={() => {
-        setActiveSection(item.id);
-        setMobileMenuOpen(false);
-        setSidebarCollapsed(true); // ✅ FIX
-      }}
-      className={`flex items-center p-3 hover:bg-orange-50 ${
-        activeSection === item.id
-          ? "bg-orange-100 text-orange-700"
-          : "text-gray-700"
-      }`}
-    >
-      <span className="text-xl">{item.icon}</span>
-      {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
-    </button>
-  ))}
+{/* LOGO */}
+<div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+  {!sidebarCollapsed && (
+    <span className="text-xl font-bold text-orange-400 tracking-wide">
+      Driver Panel
+    </span>
+  )}
+
+  <button
+    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+    className="text-gray-400 hover:text-white text-lg"
+  >
+    {sidebarCollapsed ? "➡" : "⬅"}
+  </button>
+</div>
+
+{/* MENU */}
+<nav className="flex flex-col mt-4 px-3 space-y-1">
+
+{menuItems.map((item) => {
+
+const active = activeSection === item.id;
+
+return (
+
+<button
+key={item.id}
+onClick={() => {
+setActiveSection(item.id);
+setMobileMenuOpen(false);
+}}
+
+className={`
+group flex items-center gap-3 px-3 py-3 rounded-lg
+transition-all duration-200
+${active
+? "bg-orange-500 text-white shadow-md"
+: "text-gray-300 hover:bg-gray-700 hover:text-white"}
+`}
+>
+
+<div
+className={`
+flex items-center justify-center w-9 h-9 rounded-lg
+${active ? "bg-white/20" : "bg-gray-700 group-hover:bg-gray-600"}
+`}
+>
+<span className="text-lg">{item.icon}</span>
+</div>
+
+{!sidebarCollapsed && (
+<span className="text-sm font-medium tracking-wide">
+{item.label}
+</span>
+)}
+
+</button>
+
+);
+
+})}
+
 </nav>
 
-      </aside>
+
+
+
+</aside>
+
       <main className="flex-1 flex flex-col">
         <header className="bg-white shadow p-4 flex justify-between items-center">
   <button
