@@ -64,9 +64,16 @@ const userSchema = new mongoose.Schema(
     licenseNumber: { type: String },
     vehicleNumber: { type: String },
     idProof: { type: String },
+    driverLocation: {
+  lat: { type: Number },
+  lng: { type: Number },
+  updatedAt: { type: Date }
+},
   },
   { timestamps: true }
+  
 );
+
 
 /* ================= INDEXES ================= */
 

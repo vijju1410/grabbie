@@ -28,9 +28,12 @@ const API = process.env.REACT_APP_API_URL;
     const [admin, setAdmin] = useState(null);
     const [pendingDrivers, setPendingDrivers] = useState([]);
     const [approvedVendors, setApprovedVendors] = useState([]);
+    const [selectedDriver, setSelectedDriver] = useState(null);
+    const [customerSearch, setCustomerSearch] = useState("");
   const [rejectedVendors, setRejectedVendors] = useState([]);
   const [approvedDrivers, setApprovedDrivers] = useState([]);
   const [rejectedDrivers, setRejectedDrivers] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState(null);
   // ---------- PAGINATION ----------
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -265,10 +268,34 @@ const API = process.env.REACT_APP_API_URL;
           {/* ---------- CUSTOMERS ---------- */}
           {!loading && active === "users" && (
             <SectionCard title="Customers">
+              <input
+  type="text"
+  placeholder="Search customers..."
+  value={customerSearch}
+  onChange={(e) => setCustomerSearch(e.target.value)}
+  className="border px-3 py-2 rounded mb-4 w-full"
+/>
   <SimpleTable
-    columns={["Name", "Email", "Phone"]}
-    rows={paginate(users).map(u => [u.name, u.email, u.phone || "-"])}
-  />
+  columns={["Customer", "Email", "Phone"]}
+  rows={paginate(
+    users.filter(u =>
+      u.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      (u.phone || "").toLowerCase().includes(customerSearch.toLowerCase())
+    )
+  ).map(u => [
+    <div className="flex items-center gap-3">
+      <img
+        src={u.profileImage || "https://via.placeholder.com/40"}
+        alt="customer"
+        className="w-8 h-8 rounded-full object-cover"
+      />
+      {u.name}
+    </div>,
+    u.email,
+    u.phone || "-"
+  ])}
+/>
 
   <Pagination
     totalItems={users.length}
@@ -287,24 +314,42 @@ const API = process.env.REACT_APP_API_URL;
       <table className="min-w-full bg-white rounded-lg overflow-hidden">
         <thead className="bg-slate-100">
           <tr>
-            <Th>Name</Th><Th>Email</Th><Th>Vehicle</Th><Th>Status</Th><Th>Actions</Th>
+           <Th>User</Th><Th>Email</Th><Th>Vehicle</Th><Th>Status</Th><Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
           {paginate(pendingDrivers).map(d => (
             <tr key={d._id} className="border-t">
-              <Td>{d.name}</Td>
+             <Td>
+<div className="flex items-center gap-3">
+  <img
+    src={d.profileImage || "https://via.placeholder.com/40"}
+    alt="user"
+    className="w-8 h-8 rounded-full object-cover"
+  />
+  {d.name}
+</div>
+</Td>
               <Td>{d.email}</Td>
               <Td>{d.vehicleNumber || "-"}</Td>
               <Td>
-                <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">
-                  {d.driverStatus}
-                </span>
+               <span className={`px-2 py-0.5 text-xs rounded
+${d.driverStatus === "approved" ? "bg-green-100 text-green-700"
+: d.driverStatus === "rejected" ? "bg-red-100 text-red-700"
+: "bg-yellow-100 text-yellow-800"}`}>
+  {d.driverStatus}
+</span>
               </Td>
-              <Td className="flex gap-2">
-                <button onClick={() => approveDriver(d._id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded">Approve</button>
-                <button onClick={() => rejectDriver(d._id)} className="bg-red-600 text-white px-3 py-1.5 rounded">Reject</button>
-              </Td>
+            <Td className="flex gap-2">
+
+<button
+  onClick={() => setSelectedDriver(d)}
+  className="bg-blue-600 text-white px-3 py-1.5 rounded"
+>
+View
+</button>
+
+</Td>
             </tr>
           ))}
         </tbody>
@@ -332,13 +377,22 @@ const API = process.env.REACT_APP_API_URL;
       <table className="min-w-full bg-white rounded-lg overflow-hidden">
         <thead className="bg-slate-100">
           <tr>
-            <Th>Name</Th><Th>Email</Th><Th>Business</Th><Th>Status</Th><Th>Actions</Th>
+            <Th>Vendor</Th><Th>Email</Th><Th>Business</Th><Th>Status</Th><Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
           {paginate(pendingVendors).map(v => (
             <tr key={v._id} className="border-t">
-              <Td>{v.name}</Td>
+             <Td>
+  <div className="flex items-center gap-3">
+    <img
+      src={v.profileImage || "https://via.placeholder.com/40"}
+      alt="vendor"
+      className="w-8 h-8 rounded-full object-cover"
+    />
+    {v.name}
+  </div>
+</Td>
               <Td>{v.email}</Td>
               <Td>{v.businessName || "-"}</Td>
               <Td>
@@ -347,13 +401,27 @@ const API = process.env.REACT_APP_API_URL;
                 </span>
               </Td>
               <Td className="flex gap-2">
-                <button onClick={() => approveVendor(v._id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded">
-                  Approve
-                </button>
-                <button onClick={() => rejectVendor(v._id)} className="bg-red-600 text-white px-3 py-1.5 rounded">
-                  Reject
-                </button>
-              </Td>
+  <button
+    onClick={() => setSelectedVendor(v)}
+    className="bg-blue-600 text-white px-3 py-1.5 rounded"
+  >
+    View
+  </button>
+
+  {/* <button
+    onClick={() => approveVendor(v._id)}
+    className="bg-emerald-600 text-white px-3 py-1.5 rounded"
+  >
+    Approve
+  </button>
+
+  <button
+    onClick={() => rejectVendor(v._id)}
+    className="bg-red-600 text-white px-3 py-1.5 rounded"
+  >
+    Reject
+  </button> */}
+</Td>
             </tr>
           ))}
         </tbody>
@@ -406,7 +474,21 @@ const API = process.env.REACT_APP_API_URL;
   {!loading && active === "approvedVendors" && (
     <SectionCard title="Approved Vendors">
       {approvedVendors.length === 0 ? <div>No approved vendors.</div> :
-        <SimpleTable columns={["Name", "Email", "Business"]} rows={approvedVendors.map(v => [v.name, v.email, v.businessName || "-"])} />}
+<SimpleTable
+columns={["Vendor", "Email", "Business"]}
+rows={approvedVendors.map(v => [
+  <div className="flex items-center gap-3">
+    <img
+      src={v.profileImage || "https://via.placeholder.com/40"}
+      alt="vendor"
+      className="w-8 h-8 rounded-full object-cover"
+    />
+    {v.name}
+  </div>,
+  v.email,
+  v.businessName || "-"
+])}
+/>}
     </SectionCard>
   )}
 
@@ -414,7 +496,21 @@ const API = process.env.REACT_APP_API_URL;
   {!loading && active === "rejectedVendors" && (
     <SectionCard title="Rejected Vendors">
       {rejectedVendors.length === 0 ? <div>No rejected vendors.</div> :
-        <SimpleTable columns={["Name", "Email", "Business"]} rows={rejectedVendors.map(v => [v.name, v.email, v.businessName || "-"])} />}
+        <SimpleTable
+columns={["Vendor", "Email", "Business"]}
+rows={rejectedVendors.map(v => [
+  <div className="flex items-center gap-3">
+    <img
+      src={v.profileImage || "https://via.placeholder.com/40"}
+      alt="vendor"
+      className="w-8 h-8 rounded-full object-cover"
+    />
+    {v.name}
+  </div>,
+  v.email,
+  v.businessName || "-"
+])}
+/>}
     </SectionCard>
   )}
 
@@ -422,7 +518,21 @@ const API = process.env.REACT_APP_API_URL;
   {!loading && active === "approvedDrivers" && (
     <SectionCard title="Approved Drivers">
       {approvedDrivers.length === 0 ? <div>No approved drivers.</div> :
-        <SimpleTable columns={["Name", "Email", "Vehicle"]} rows={approvedDrivers.map(d => [d.name, d.email, d.vehicleNumber || "-"])} />}
+       <SimpleTable
+  columns={["Driver", "Email", "Vehicle"]}
+  rows={approvedDrivers.map(d => [
+    <div className="flex items-center gap-3">
+      <img
+        src={d.profileImage || "https://via.placeholder.com/40"}
+        alt="driver"
+        className="w-8 h-8 rounded-full object-cover"
+      />
+      {d.name}
+    </div>,
+    d.email,
+    d.vehicleNumber || "-"
+  ])}
+/>}
     </SectionCard>
   )}
 
@@ -430,10 +540,173 @@ const API = process.env.REACT_APP_API_URL;
   {!loading && active === "rejectedDrivers" && (
     <SectionCard title="Rejected Drivers">
       {rejectedDrivers.length === 0 ? <div>No rejected drivers.</div> :
-        <SimpleTable columns={["Name", "Email", "Vehicle"]} rows={rejectedDrivers.map(d => [d.name, d.email, d.vehicleNumber || "-"])} />}
+       <SimpleTable
+  columns={["Driver", "Email", "Vehicle"]}
+  rows={rejectedDrivers.map(d => [
+    <div className="flex items-center gap-3">
+      <img
+        src={d.profileImage || "https://via.placeholder.com/40"}
+        alt="driver"
+        className="w-8 h-8 rounded-full object-cover"
+      />
+      {d.name}
+    </div>,
+    d.email,
+    d.vehicleNumber || "-"
+  ])}
+/>}
     </SectionCard>
   )}
+  {selectedVendor && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-xl w-[500px] relative">
 
+      <button
+        onClick={() => setSelectedVendor(null)}
+        className="absolute top-2 right-3 text-gray-500"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-xl font-bold mb-4">Vendor Details</h2>
+
+      <div className="space-y-2 text-sm">
+
+        <p><b>Name:</b> {selectedVendor.name}</p>
+        <p><b>Email:</b> {selectedVendor.email}</p>
+        <p><b>Phone:</b> {selectedVendor.phone}</p>
+
+        <p><b>Business Name:</b> {selectedVendor.businessName}</p>
+        <p><b>Business Address:</b> {selectedVendor.businessAddress}</p>
+        <p><b>Business Phone:</b> {selectedVendor.businessPhone}</p>
+        <p><b>Category:</b> {selectedVendor.businessCategory}</p>
+
+        {selectedVendor.profileImage && (
+          <div>
+            <p className="font-semibold mt-2">Profile Image</p>
+            <img
+              src={selectedVendor.profileImage}
+              alt="profile"
+              className="w-20 h-20 rounded mt-1"
+            />
+          </div>
+        )}
+
+        {selectedVendor.idProof && (
+          <div>
+            <p className="font-semibold mt-2">ID Proof</p>
+            <a
+              href={selectedVendor.idProof}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline"
+            >
+              View ID Proof
+            </a>
+          </div>
+        )}
+
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => {
+            approveVendor(selectedVendor._id);
+            setSelectedVendor(null);
+          }}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Approve
+        </button>
+
+        <button
+          onClick={() => {
+            rejectVendor(selectedVendor._id);
+            setSelectedVendor(null);
+          }}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Reject
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+{selectedDriver && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-xl w-[500px] relative">
+
+      <button
+        onClick={() => setSelectedDriver(null)}
+        className="absolute top-2 right-3 text-gray-500"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-xl font-bold mb-4">Driver Details</h2>
+
+      <div className="space-y-2 text-sm">
+
+        <p><b>Name:</b> {selectedDriver.name}</p>
+        <p><b>Email:</b> {selectedDriver.email}</p>
+        <p><b>Phone:</b> {selectedDriver.phone}</p>
+
+        <p><b>Vehicle Number:</b> {selectedDriver.vehicleNumber}</p>
+        <p><b>License Number:</b> {selectedDriver.licenseNumber}</p>
+
+        {selectedDriver.profileImage && (
+          <div>
+            <p className="font-semibold mt-2">Profile Image</p>
+            <img
+              src={selectedDriver.profileImage}
+              alt="profile"
+              className="w-20 h-20 rounded mt-1"
+            />
+          </div>
+        )}
+
+        {selectedDriver.idProof && (
+          <div>
+            <p className="font-semibold mt-2">ID Proof</p>
+            <a
+              href={selectedDriver.idProof}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 underline"
+            >
+              View ID Proof
+            </a>
+          </div>
+        )}
+
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => {
+            approveDriver(selectedDriver._id);
+            setSelectedDriver(null);
+          }}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Approve
+        </button>
+
+        <button
+          onClick={() => {
+            rejectDriver(selectedDriver._id);
+            setSelectedDriver(null);
+          }}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Reject
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
           {/* ---------- NOTIFICATIONS ---------- */}
           {!loading && active === "notifications" && (
             <SectionCard title="Notifications">

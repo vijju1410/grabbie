@@ -633,5 +633,46 @@ router.post(
     }
   }
 );
+// DRIVER LIVE LOCATION UPDATE
+router.post("/driver/location", protect, async (req, res) => {
+  try {
 
+    if (req.user.role !== "driver") {
+      return res.status(403).json({ message: "Only drivers can update location" });
+    }
+
+    const { lat, lng } = req.body;
+
+    const driver = await User.findById(req.user._id);
+
+    driver.driverLocation = {
+      lat,
+      lng,
+      updatedAt: new Date()
+    };
+
+    await driver.save();
+
+    res.json({ message: "Location updated" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Location update failed" });
+  }
+});
+// GET DRIVER LOCATION
+router.get("/driver/location/:driverId", protect, async (req, res) => {
+  try {
+
+    const driver = await User.findById(req.params.driverId);
+
+    if (!driver || !driver.driverLocation) {
+      return res.status(404).json({ message: "Driver location not available" });
+    }
+
+    res.json(driver.driverLocation);
+
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch driver location" });
+  }
+});
 module.exports = router;

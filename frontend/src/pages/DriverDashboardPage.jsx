@@ -16,7 +16,7 @@ const API = process.env.REACT_APP_API_URL;
  
 
 const mapContainerStyle = { width: "100%", height: "400px" };
-const defaultCenter = { lat: 40.7128, lng: -74.006 };
+const defaultCenter = { lat: 23.0225, lng: 72.5714 };
 
 const DriverDashboardPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -30,6 +30,7 @@ const DriverDashboardPage = () => {
 const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [selectedMarker, setSelectedMarker] = useState(null); // for map InfoWindow
+  const [driverLocation, setDriverLocation] = useState(null);
 
 
  const [driverStats, setDriverStats] = useState({
@@ -92,8 +93,14 @@ const fetchDriverStats = async () => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
     { id: "orders", label: "Orders", icon: "📦" },
+    { id: "navigation", label: "Navigation", icon: "🗺️" },
+     { id: "history", label: "Delivery History", icon: "📜" },
     { id: "earnings", label: "Earnings", icon: "💰" },
+    { id: "wallet", label: "Wallet", icon: "💳" },
+    { id: "ratings", label: "Ratings", icon: "⭐" },
+    { id: "notifications", label: "Notifications", icon: "🔔" },
     { id: "profile", label: "Profile", icon: "👤" },
+    { id: "support", label: "Support", icon: "🆘" }
   ];
 
   const getStatusColor = (status) => {
@@ -356,11 +363,11 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     return (
       <div className="bg-white rounded-xl shadow p-4">
         <h2 className="text-lg font-semibold mb-3">Active Orders Map</h2>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={defaultCenter}
-          zoom={12}
-        >
+       <GoogleMap
+  mapContainerStyle={mapContainerStyle}
+  center={driverLocation || defaultCenter}
+  zoom={14}
+>
           {activeOrders.map(order => (
             <Marker
               key={order._id}
@@ -371,6 +378,17 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
               onClick={() => setSelectedMarker(order)}
             />
           ))}
+          {/* Driver marker */}
+{driverLocation && (
+  <Marker
+    position={driverLocation}
+    icon={{
+      url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+    }}
+  />
+)}
+
+
 
           {selectedMarker && (
             <InfoWindow
@@ -562,8 +580,63 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   );
 };
 
+const NavigationSection = () => (
+  <div className="space-y-4">
+    <h1 className="text-xl font-semibold">Navigation</h1>
+    {renderMap()}
+  </div>
+);
+const NotificationsSection = () => (
+  <div className="bg-white rounded-xl shadow p-6">
+    <h1 className="text-xl font-semibold mb-4">Notifications</h1>
 
+    {driverStats.notificationsCount === 0 ? (
+      <p className="text-gray-500">No notifications</p>
+    ) : (
+      <p>You have {driverStats.notificationsCount} new notifications</p>
+    )}
+  </div>
+);
+const WalletSection = () => (
+  <div className="bg-white rounded-xl shadow p-6 space-y-4">
+    <h1 className="text-xl font-semibold">Driver Wallet</h1>
 
+    <div className="bg-green-100 p-4 rounded-lg">
+      <p className="text-gray-600 text-sm">Total Earnings</p>
+      <p className="text-2xl font-bold text-green-700">
+        ₹{driverStats.totalEarnings}
+      </p>
+    </div>
+
+    <button className="bg-orange-500 text-white px-4 py-2 rounded">
+      Withdraw Earnings
+    </button>
+  </div>
+);
+const RatingsSection = () => (
+  <div className="bg-white rounded-xl shadow p-6">
+    <h1 className="text-xl font-semibold mb-4">Driver Ratings</h1>
+
+    <p className="text-3xl font-bold">⭐ {driverStats.averageRating || 5}</p>
+
+    <p className="text-gray-500 mt-2">
+      Based on completed deliveries
+    </p>
+  </div>
+);
+const SupportSection = () => (
+  <div className="bg-white rounded-xl shadow p-6 space-y-3">
+    <h1 className="text-xl font-semibold">Support</h1>
+
+    <p className="text-gray-600">
+      If you face any issue during delivery contact support.
+    </p>
+
+    <button className="bg-orange-500 text-white px-4 py-2 rounded">
+      Contact Admin
+    </button>
+  </div>
+);
 const EarningsSection = () => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -578,19 +651,61 @@ const EarningsSection = () => (
     <WeeklyChart />
   </div>
 );
+const DeliveryHistorySection = () => {
+  const deliveredOrders = orders.filter(o => o.status === "Delivered");
 
+  return (
+    <div className="bg-white rounded-xl shadow p-6">
+      <h1 className="text-xl font-semibold mb-4">Delivery History</h1>
 
-  const renderContent = () => {
+      {deliveredOrders.length === 0 ? (
+        <p className="text-gray-500">No deliveries yet</p>
+      ) : (
+        deliveredOrders.map(order => (
+          <div key={order._id} className="border p-3 rounded mb-3">
+            <p className="font-semibold text-orange-600">Order #{order._id}</p>
+            <p className="text-sm">{order.customerId?.name}</p>
+            <p className="text-sm">Amount: ₹{order.totalAmount}</p>
+            <p className="text-sm text-green-600">Delivered</p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
+ const renderContent = () => {
   switch (activeSection) {
     case "dashboard":
       return renderDashboard();
+
     case "orders":
       return <OrdersSection />;
+
     case "earnings":
       return <EarningsSection />;
+
     case "profile":
       return <ProfileSection />;
-  
+
+    case "history":
+      return <DeliveryHistorySection />;
+
+    case "navigation":
+      return <NavigationSection />;
+
+    case "notifications":
+      return <NotificationsSection />;
+
+    case "wallet":
+      return <WalletSection />;
+
+    case "ratings":
+      return <RatingsSection />;
+
+    case "support":
+      return <SupportSection />;
+
     default:
       return renderDashboard();
   }
@@ -603,6 +718,41 @@ const EarningsSection = () => (
       .then(res => setProfile(res.data))
       .catch(err => console.error("Failed to fetch profile:", err));
   }, []);
+
+  useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  const watchId = navigator.geolocation.watchPosition(
+    async (position) => {
+
+      const { latitude, longitude } = position.coords;
+      setDriverLocation({
+       lat: latitude,
+       lng: longitude
+      });
+      try {
+        await axios.post(
+          `${API}/api/users/driver/location`,
+          { lat: latitude, lng: longitude },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (err) {
+        console.error("Location update failed");
+      }
+
+    },
+    (err) => console.error(err),
+    {
+      enableHighAccuracy: true,
+      maximumAge: 10000,
+      timeout: 5000
+    }
+  );
+
+  return () => navigator.geolocation.clearWatch(watchId);
+
+}, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">

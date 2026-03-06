@@ -712,6 +712,8 @@ router.get("/my-orders", protect, async (req, res) => {
           select: "businessName businessAddress businessPhone"
         }
       })
+        .populate("assignedDriver", "name phone vehicleNumber") // ⭐ ADD THIS
+
       .sort({ createdAt: -1 });
 
     // Ensure deliveryDetails is always included
