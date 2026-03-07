@@ -172,52 +172,83 @@ const API = process.env.REACT_APP_API_URL;
   }), [users.length, vendors.length, drivers.length]);
 
     return (
-      <div className="min-h-screen bg-slate-50 flex">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+        {sidebarOpen && (
+<div
+className="fixed inset-0 bg-black/40 z-30 md:hidden"
+onClick={() => setSidebarOpen(false)}
+></div>
+)}
         {/* ---------- SIDEBAR ---------- */}
-        <aside className={`bg-white shadow-md min-h-screen p-5 flex flex-col justify-between transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-16'}`}>
-          <div>
-            <div className="flex items-center justify-between mb-10">
-              {sidebarOpen && (
-                <div className="flex items-center gap-3">
-                 <img
-  src={
-    admin?.profileImage
-      ? admin.profileImage
-      : "https://via.placeholder.com/150"
-  }
-  alt="Admin"
-  className="w-10 h-10 rounded-full object-cover border-2 border-slate-300"
+<aside
+className={`
+fixed md:static z-40 top-[64px] left-0 h-[calc(100vh-64px)]
+bg-slate-900 text-gray-200
+transition-all duration-300
+${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+md:translate-x-0
+w-64
+overflow-y-auto
+`}
+>
+         <div className="flex items-center justify-between mb-6 px-4 pt-4">
+
+<div className="flex items-center gap-3">
+<img
+src={admin?.profileImage || "https://via.placeholder.com/40"}
+alt="Admin"
+className="w-10 h-10 rounded-full border-2 border-orange-500 object-cover"
 />
 
-                  <h1 className="text-2xl font-bold text-slate-800">Admin Panel</h1>
-                </div>
-              )}
-              <button className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
+<span className="font-semibold text-white">
+Admin Panel
+</span>
+</div>
 
-            <SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} sidebarOpen={sidebarOpen} />
-  <SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} sidebarOpen={sidebarOpen} />
+<button
+className="md:hidden text-gray-300"
+onClick={() => setSidebarOpen(false)}
+>
+<X size={20}/>
+</button>
+</div>
 
-            <SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} sidebarOpen={sidebarOpen} />
-  <SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} sidebarOpen={sidebarOpen} />
-        <SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} sidebarOpen={sidebarOpen} />
+<div className="border-t border-slate-700 mt-4 pt-4">
 
-            <SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} sidebarOpen={sidebarOpen} />
-            <SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} sidebarOpen={sidebarOpen} />
+<SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} />
 
+<SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} />
 
-          </div>
+<SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} />
+
+<SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} />
+
+<SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} />
+
+<SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} />
+
+<SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} />
+
+<SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} />
+
+<SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} />
+
+<SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} />
+
+</div>
         </aside>
 
         {/* ---------- MAIN CONTENT ---------- */}
-        <main className="flex-1 p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-slate-800">
+      <main className="flex-1 p-3 sm:p-4 md:p-8">
+<div className="flex flex-wrap justify-between items-center gap-2 mb-6">
+
+<button
+className="md:hidden mr-2"
+onClick={() => setSidebarOpen(true)}
+>
+<Menu className="w-6 h-6"/>
+</button>       
+     <h1 className="text-lg sm:text-2xl font-bold text-slate-800">
               {active === "dashboard" ? "Dashboard"
                 : active === "users" ? "Customers"
                   : active === "vendors" ? "Pending Vendors"
@@ -246,13 +277,12 @@ const API = process.env.REACT_APP_API_URL;
           {/* ---------- DASHBOARD ---------- */}
           {!loading && active === "dashboard" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 <StatCard title="Total Customers" value={users.length} color="from-blue-500 to-blue-400" />
                 <StatCard title="Total Vendors" value={vendors.length} color="from-purple-500 to-purple-400" />
                 <StatCard title="Delivery Partners" value={drivers.length} color="from-green-500 to-green-400" />
               </div><br></br>
-              <div className="bg-white rounded-xl shadow p-6 max-w-2xl mx-auto h-96 flex items-center justify-center">
-    <Doughnut 
+<div className="bg-white rounded-xl shadow p-4 sm:p-6 w-full max-w-2xl mx-auto h-80 sm:h-96 flex items-center justify-center">    <Doughnut 
       data={chartData} 
       options={{ 
         responsive: true, 
@@ -748,16 +778,21 @@ rows={rejectedVendors.map(v => [
   };
 
   // ---------- COMPONENTS ----------
-  const SidebarItem = ({ icon, label, active, onClick, sidebarOpen }) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${active ? 'bg-slate-900 text-white' : 'hover:bg-slate-100 text-slate-700'}`}>
-      <span className="w-5 h-5">{icon}</span>
-      {sidebarOpen && <span className="font-medium">{label}</span>}
-    </button>
-  );
+const SidebarItem = ({ icon, label, active, onClick }) => (
+<button
+onClick={onClick}
+className={`flex items-center gap-3 w-full px-4 py-3 md:py-3.5 rounded-lg text-sm transition-all
+  ${active ? "bg-orange-500 text-white" : "text-gray-300 hover:bg-gray-800"}
+`}
+>
+<span className="w-5 h-5">{icon}</span>
+<span>{label}</span>
+</button>
+);
 
   const StatCard = ({ title, value, color }) => (
-    <div className={`bg-gradient-to-r ${color} text-white p-5 rounded-xl shadow flex flex-col`}>
-      <div className="text-sm">{title}</div>
+<div className={`bg-gradient-to-r ${color} text-white p-4 sm:p-5 rounded-xl shadow flex flex-col`}> 
+       <div className="text-sm">{title}</div>
       <div className="text-2xl font-bold mt-1">{value}</div>
     </div>
   );
