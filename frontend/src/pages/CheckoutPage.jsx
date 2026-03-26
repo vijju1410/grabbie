@@ -1,6 +1,6 @@
 // src/pages/CheckoutPage.jsx
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useCart } from "../components/CartContext";
@@ -9,6 +9,10 @@ const API = process.env.REACT_APP_API_URL;
 const CheckoutPage = () => {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+const buyNowItem = location.state?.buyNowItem;
+const items = buyNowItem ? [buyNowItem] : cart;
+  
   const token = localStorage.getItem("token");
 
 const loadRazorpay = () => {
@@ -161,13 +165,14 @@ try {
 
   /* ================= CART TOTALS ================= */
   const itemsTotal = useMemo(() => {
-    return cart.reduce(
-      (sum, item) =>
-        sum + (item.productId.price || 0) * (item.quantity || 1),
-      0
-    );
-  }, [cart]);
-
+    return items.reduce(
+  (sum, item) => {
+    const p = item.productId || item.product;
+    return sum + (p.price || 0) * (item.quantity || 1);
+  },
+  0
+)
+  }, [items]);
   const serviceCharge = useMemo(
     () => +(itemsTotal * SERVICE_CHARGE_PERCENT) / 100,
     [itemsTotal]
@@ -193,6 +198,14 @@ try {
       Number(tip || 0);
     return +total.toFixed(2);
   }, [itemsTotal, serviceCharge, gst, platformFee, deliveryCharge, tip]);
+
+  useEffect(() => {
+  if (itemsTotal > 499) {
+    setDeliveryCharge(0);
+  } else {
+    setDeliveryCharge(DEFAULT_DELIVERY_CHARGE);
+  }
+}, [itemsTotal]);
 
   /* ================= INPUT HANDLER ================= */
   const onChange = (key, value) => {
@@ -223,14 +236,14 @@ try {
     if (!country.trim()) e.country = "Country required";
 
     setErrors(e);
-    setIsFormValid(Object.keys(e).length === 0 && cart.length > 0);
+    setIsFormValid(Object.keys(e).length === 0 && items.length > 0);
   };
 
   // 🔹 LIVE validation
   useEffect(() => {
     validateFields();
     // eslint-disable-next-line
-  }, [formData, cart]);
+ }, [formData, items]);
 
   /* ================= PLACE ORDER ================= */
   const handleOrder = async () => {
@@ -262,10 +275,13 @@ try {
       await axios.post(
   `${API}/api/orders/place`,
         {
-          products: cart.map(item => ({
-            productId: item.productId._id,
-            quantity: item.quantity,
-          })),
+          products: items.map(item => {
+  const p = item.productId || item.product;
+  return {
+    productId: p._id,
+    quantity: item.quantity,
+  };
+}),
           totalAmount: charges.grandTotal,
           deliveryDetails: {
             fullName: formData.name,
@@ -292,7 +308,7 @@ try {
         text: "✅ Your order has been placed successfully.",
         timer: 2000,
         showConfirmButton: false,
-      }).then(() => navigate("/"));
+      }).then(() => navigate("/orders"));
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -384,32 +400,36 @@ try {
 
   {/* CART ITEMS */}
   <div className="space-y-3 mb-4">
-    {cart.map((item) => (
-      <div
-        key={item.productId._id}
-        className="flex gap-3 items-center border-b pb-2"
-      >
-        <img
-          src={item.productId.image}
-          alt={item.productId.name}
-          className="w-14 h-14 object-contain rounded"
-        />
+    {items.map((item) => {
+  const productData = item.productId || item.product;
 
-        <div className="flex-1">
-          <p className="font-medium text-sm">{item.productId.name}</p>
-          <p className="text-xs text-gray-500">
-            {item.productId.category}
-          </p>
-          <p className="text-xs text-gray-500">
-            Qty: {item.quantity}
-          </p>
-        </div>
+  return (
+    <div
+      key={productData._id}
+      className="flex gap-3 items-center border-b pb-2"
+    >
+      <img
+        src={productData.image}
+        alt={productData.name}
+        className="w-14 h-14 object-contain rounded"
+      />
 
-        <p className="text-sm font-semibold">
-          ₹{(item.productId.price * item.quantity).toFixed(2)}
+      <div className="flex-1">
+        <p className="font-medium text-sm">{productData.name}</p>
+        <p className="text-xs text-gray-500">
+          {productData.category}
+        </p>
+        <p className="text-xs text-gray-500">
+          Qty: {item.quantity}
         </p>
       </div>
-    ))}
+
+      <p className="text-sm font-semibold">
+        ₹{(productData.price * item.quantity).toFixed(2)}
+      </p>
+    </div>
+  );
+})}
   </div>
 
   {/* PRICE BREAKDOWN */}
@@ -430,8 +450,18 @@ try {
       <span>Platform fee</span>
       <span>₹{platformFee.toFixed(2)}</span>
     </div>
+    {itemsTotal > 499 && (
+  <p className="text-green-600 text-xs font-medium">
+    🎉 Free delivery applied!
+  </p>
+)}
+{itemsTotal <= 499 && (
+  <p className="text-orange-500 text-xs">
+    Add ₹{(500 - itemsTotal).toFixed(0)} more for free delivery
+  </p>
+)}
     <div className="flex justify-between">
-      <span>Delivery</span>
+      <span>Delivery charge</span>
       <span>₹{deliveryCharge.toFixed(2)}</span>
     </div>
 
@@ -478,7 +508,7 @@ try {
         ? handleOnlinePayment
         : handleOrder
     }
-    disabled={!isFormValid || loading || cart.length === 0}
+    disabled={!isFormValid || loading ||items.length === 0}
     className={`mt-4 w-full py-3 rounded-lg font-semibold text-white ${
       !isFormValid || loading
         ? "bg-gray-400 cursor-not-allowed"
