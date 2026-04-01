@@ -16,6 +16,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/payment.routes");
+const chatbotRoutes = require("./routes/chatbotRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -95,7 +96,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payment", paymentRoutes);
-
+app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/offers", require("./routes/offerRoutes"));
 app.get("/", (req, res) => {
   res.send("🚀 Grabbie API is running...");
 });

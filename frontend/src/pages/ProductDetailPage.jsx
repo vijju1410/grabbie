@@ -15,7 +15,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+const [offer, setOffer] = useState(null);
   const { cart, fetchCart } = useCart();
 
   const token = localStorage.getItem("token");
@@ -38,6 +38,19 @@ const ProductDetailPage = () => {
     fetchProduct();
   }, [id]);
 
+useEffect(() => {
+  const fetchOffer = async () => {
+    try {
+      const res = await axios.get(`${API}/api/offers`);
+      const found = res.data.find(o => o.productId?._id === id);
+      setOffer(found);
+    } catch (err) {
+      console.error("Offer fetch error", err);
+    }
+  };
+
+  fetchOffer();
+}, [id]);
 
 useEffect(() => {
   if (product && cart.length > 0) {
@@ -167,14 +180,48 @@ const isInCart = cart.some(
 
         <p className="text-gray-600 mb-4">{product.description}</p>
 
-        <p className="text-2xl font-semibold text-green-600 mb-2">
-          ₹{product.price}
-        </p>
+        {offer ? (
+  <div className="mb-3">
+    <p className="text-sm text-gray-400 line-through">
+      ₹{product.price}
+    </p>
+
+    <p className="text-3xl font-bold text-green-600">
+      ₹{
+        offer.discountType === "percent"
+          ? (product.price - (product.price * offer.discountValue) / 100).toFixed(2)
+          : (product.price - offer.discountValue).toFixed(2)
+      }
+    </p>
+
+    <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">
+      {offer.discountType === "percent"
+        ? `${offer.discountValue}% OFF`
+        : `₹${offer.discountValue} OFF`}
+    </span>
+  </div>
+) : (
+  <p className="text-2xl font-semibold text-green-600 mb-2">
+    ₹{product.price}
+  </p>
+)}
 
         <p className="text-sm text-gray-500 mb-2">
           Category: {product.category}
         </p>
-
+<p className="text-sm mb-3">
+  {product.stock > 0 ? (
+    product.stock <= 5 ? (
+      <span className="text-red-500">
+        🔥 Only {product.stock} left
+      </span>
+    ) : (
+      <span className="text-green-600">In Stock</span>
+    )
+  ) : (
+    <span className="text-red-600 font-semibold">Out of Stock</span>
+  )}
+</p>
         {/* Quantity Selector */}
        <div className="flex items-center gap-3 mb-4">
   <button
@@ -192,8 +239,14 @@ const isInCart = cart.some(
   <span className="font-semibold">{quantity}</span>
 
   <button
-    disabled={quantity >= 10}
-    onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+ disabled={quantity >= product.stock}
+onClick={() => {
+  if (quantity >= product.stock) {
+    toast.error("Cannot add more than available stock");
+    return;
+  }
+  setQuantity((q) => q + 1);
+}}
     className={`px-3 py-1 rounded ${
       quantity >= 10
         ? "bg-gray-200 cursor-not-allowed opacity-50"
@@ -219,7 +272,7 @@ const isInCart = cart.some(
       disabled={product.stock === 0}
       className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
     >
-      Add to Cart
+     {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
     </button>
   )}
 

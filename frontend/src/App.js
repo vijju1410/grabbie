@@ -18,7 +18,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import AboutPage from './pages/AboutUsPage';
 import ResubmitPage from './pages/ResubmitPage';
 import CategoriesPage from "./pages/CategoriesPage";
-
+import Chatbot from "./components/Chatbot";
 // New role-specific pages
 import DriverDashboardPage from './pages/DriverDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -68,7 +68,8 @@ function AppWrapper() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
 
-      <Header />
+      {user?.role !== "vendor" && <Header />}
+      <Chatbot />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />

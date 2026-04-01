@@ -26,7 +26,7 @@ const uploadToCloudinary = (buffer) =>
 // ================= ADD PRODUCT =================
 router.post("/add", protect, upload.single("image"), async (req, res) => {
   try {
-    const { name, price, category, description } = req.body;
+   const { name, price, category, description, stock } = req.body;
 
     let imageUrl = "";
     if (req.file) {
@@ -37,6 +37,7 @@ router.post("/add", protect, upload.single("image"), async (req, res) => {
     const product = new Product({
       name,
       price,
+      stock: Number(stock) || 0,
       category,
       description,
       image: imageUrl,
@@ -139,7 +140,7 @@ router.put("/:id", protect, upload.single("image"), async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    const { name, price, category, description } = req.body;
+    const { name, price, category, description, stock } = req.body;
 
     if (req.file) {
       const result = await uploadToCloudinary(req.file.buffer);
@@ -148,6 +149,9 @@ router.put("/:id", protect, upload.single("image"), async (req, res) => {
 
     product.name = name || product.name;
     product.price = price || product.price;
+    if (stock !== undefined) {
+  product.stock = Number(stock);
+}
     product.category = category || product.category;
     product.description = description || product.description;
 

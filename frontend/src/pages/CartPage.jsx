@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../components/CartContext";
 import toast, { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 const API = process.env.REACT_APP_API_URL;
 
 const CartPage = () => {
@@ -10,8 +11,11 @@ const CartPage = () => {
   const token = localStorage.getItem("token");
 
   /* ================= UPDATE QUANTITY ================= */
-  const updateQuantity = async (productId, newQty) => {
-  if (newQty < 1 || newQty > 10) return;
+  const updateQuantity = async (productId, newQty, stock) => {
+  if (newQty < 1 || newQty > stock) {
+    toast.error(`Only ${stock} available`);
+    return;
+  }
 
   try {
     await fetch(`${API}/api/cart/update`, {
@@ -49,6 +53,15 @@ const CartPage = () => {
       toast.error("Failed to remove item");
     }
   };
+
+useEffect(() => {
+  cart.forEach((item) => {
+    if (item.productId.stock === 0) {
+      removeItem(item.productId._id);
+      toast.error(`${item.productId.name} removed (out of stock)`);
+    }
+  });
+}, [cart]);
 
   /* ================= TOTAL ================= */
 const total = cart
@@ -120,6 +133,19 @@ const total = cart
                   <p className="text-green-600 font-bold mt-2">
                     ₹{price}
                   </p>
+
+                  {item.productId.stock <= 5 && item.productId.stock > 0 && (
+  <p className="text-red-500 text-xs">
+    🔥 Only {item.productId.stock} left
+  </p>
+)}
+
+{item.productId.stock === 0 && (
+  <p className="text-red-600 text-xs font-semibold">
+    ❌ Out of Stock
+  </p>
+)}
+
                   <p className="text-sm text-gray-500">
                     Subtotal: ₹{subtotal}
                   </p>
@@ -139,9 +165,9 @@ const total = cart
               <div className="flex items-center gap-3">
                <button
   disabled={qty === 1}
-  onClick={() =>
-    updateQuantity(item.productId._id, qty - 1)
-  }
+onClick={() =>
+  updateQuantity(item.productId._id, qty - 1, item.productId.stock)
+}
   className={`px-3 py-1 rounded ${
     qty === 1
       ? "bg-gray-200 cursor-not-allowed opacity-50"
@@ -154,12 +180,12 @@ const total = cart
 <span className="font-semibold">{qty}</span>
 
 <button
-  disabled={qty === 10}
-  onClick={() =>
-    updateQuantity(item.productId._id, qty + 1)
-  }
+disabled={qty >= item.productId.stock}  
+onClick={() =>
+  updateQuantity(item.productId._id, qty + 1, item.productId.stock)
+}
   className={`px-3 py-1 rounded ${
-    qty === 10
+qty >= item.productId.stock
       ? "bg-gray-200 cursor-not-allowed opacity-50"
       : "bg-gray-300"
   }`}
@@ -185,11 +211,16 @@ const total = cart
       <div className="mt-6 flex flex-col sm:flex-row justify-between items-center border-t pt-4 gap-4">
         <h2 className="text-xl font-bold">Total: ₹{total}</h2>
         <button
-          onClick={() => navigate("/checkout")}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow w-full sm:w-auto"
-        >
-          Proceed to Checkout
-        </button>
+  onClick={() => navigate("/checkout")}
+  disabled={cart.some(item => item.productId.stock === 0)}
+  className={`px-6 py-2 rounded-lg shadow w-full sm:w-auto ${
+    cart.some(item => item.productId.stock === 0)
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-green-600 hover:bg-green-700 text-white"
+  }`}
+>
+  Proceed to Checkout
+</button>
       </div>
     </div>
   );

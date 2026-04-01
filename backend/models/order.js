@@ -103,8 +103,18 @@ const orderSchema = new mongoose.Schema({
   proofs: [proofSchema],
   statusHistory: [statusHistorySchema],
 
+   cancelReason: {
+  type: String,
+  default: ""
+},
+isArchivedByVendor: {
+  type: Boolean,
+  default: false
+},
+
 // ================= CUSTOMER RATING =================
 customerRating: {
+ 
   rating: {
     type: Number,
     min: 1,

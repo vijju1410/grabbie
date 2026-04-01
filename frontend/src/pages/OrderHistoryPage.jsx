@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Package, CheckCircle } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import Swal from "sweetalert2";
 import {
   GoogleMap,
   Marker,
@@ -16,7 +17,9 @@ const API = process.env.REACT_APP_API_URL;
 /* ================= TIMELINE CONFIG ================= */
 const TIMELINE_STEPS = [
   "Placed",
-  "Preparing",
+  "Confirmed",
+  "Packed",
+  "Ready for Pickup",
   "Out for Delivery",
   "Delivered",
 ];
@@ -43,6 +46,93 @@ const OrderHistoryPage = () => {
   const [driverLocations, setDriverLocations] = useState({});
 const [routes, setRoutes] = useState({});
 const [etas, setEtas] = useState({});
+
+// ================= CANCEL ORDER =================
+const handleCancelOrder = async (orderId, status, paymentMethod) => {
+  // 🎯 Show popup with reason selection
+  const { value: reason } = await Swal.fire({
+    title: "Cancel Order",
+    html: `
+      <select id="cancel-reason" class="swal2-input">
+        <option value="">Select reason</option>
+        <option value="Ordered by mistake">Ordered by mistake</option>
+        <option value="Found better price">Found better price</option>
+        <option value="Delivery taking too long">Delivery taking too long</option>
+        <option value="Changed my mind">Changed my mind</option>
+      </select>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: "Cancel Order",
+    confirmButtonColor: "#ef4444",
+    preConfirm: () => {
+      const reason = document.getElementById("cancel-reason").value;
+      if (!reason) {
+        Swal.showValidationMessage("Please select a reason");
+      }
+      return reason;
+    }
+  });
+
+  if (!reason) return;
+
+  try {
+    await axios.put(
+      `${API}/api/orders/${orderId}/cancel`,
+      { reason }, // 🔥 send reason to backend (optional future use)
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // 🎉 SUCCESS POPUP
+    Swal.fire({
+      icon: "success",
+      title: "Order Cancelled",
+      text:
+        paymentMethod === "online"
+          ? "Refund will be processed in 3-5 business days 💰"
+          : "Your order has been cancelled successfully",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === orderId ? { ...o, status: "Cancelled" } : o
+      )
+    );
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Cancel Failed",
+      text: err.response?.data?.message || "Something went wrong",
+    });
+  }
+};
+// ================= REORDER =================
+const handleReorder = async (order) => {
+  try {
+    const payload = {
+      products: order.products.map((p) => ({
+        productId: p.productId._id,
+        quantity: p.quantity,
+      })),
+      totalAmount: order.totalAmount,
+      deliveryDetails: order.deliveryDetails,
+      paymentMethod: "cod",
+      charges: order.charges || {},
+    };
+
+    await axios.post(
+      `${API}/api/orders/place`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    toast.success("Order placed again!");
+  } catch (err) {
+    toast.error("Reorder failed");
+  }
+};
 const [animatedDriverLocations, setAnimatedDriverLocations] = useState({});
   const { isLoaded } = useJsApiLoader({
   googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
@@ -126,14 +216,18 @@ const directionsService = new window.google.maps.DirectionsService();
   );
 };
   /* ================= STATUS NORMALIZER ================= */
-  const getTimelineStatus = (status) => {
-    const s = status?.toLowerCase();
-    if (["placed", "accepted"].includes(s)) return "Placed";
-    if (["preparing", "ready for pickup"].includes(s)) return "Preparing";
-    if (["out for delivery"].includes(s)) return "Out for Delivery";
-    if (s === "delivered") return "Delivered";
-    return "Placed";
-  };
+ const getTimelineStatus = (status) => {
+  const s = status?.toLowerCase();
+
+  if (s === "placed") return "Placed";
+  if (["confirmed", "accepted"].includes(s)) return "Confirmed";
+  if (["packed", "preparing"].includes(s)) return "Packed";
+  if (s === "ready for pickup") return "Ready for Pickup";
+  if (s === "out for delivery") return "Out for Delivery";
+  if (s === "delivered") return "Delivered";
+
+  return "Placed";
+};
 
   /* ================= FETCH ORDERS ================= */
   useEffect(() => {
@@ -433,58 +527,79 @@ const directionsService = new window.google.maps.DirectionsService();
           
                     {/* PRODUCTS */}
                     {order.products.map((item, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between text-sm text-gray-600"
-                      >
-                        <span>
-                          {item.quantity}x {item.productId.name}
-                        </span>
-                        <span>
-                          ₹
-                          {(
-                            item.productId.price * item.quantity
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-
+  <div key={i}>
+    <span>
+      {item.quantity}x {item.productId?.name || "Product"}
+    </span>
+    <span>
+      ₹{((item.productId?.price || 0) * item.quantity).toFixed(2)}
+    </span>
+  </div>
+))}
                     {/* ACTIONS */}
-                    <div className="mt-4 flex flex-col sm:flex-row sm:justify-between gap-3">
-                      <p className="text-xl font-bold">
-                        ₹{order.totalAmount.toFixed(2)}
-                      </p>
+         <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-                      {order.status === "Delivered" && (
-                        <div className="flex gap-2 flex-wrap">
-                          <button
-                            onClick={() =>
-                              handleDownloadInvoice(order._id)
-                            }
-                            className="px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50"
-                          >
-                            📄 Download Invoice
-                          </button>
+  {/* PRICE */}
+  <p className="text-xl font-bold text-gray-800">
+    ₹{order.totalAmount.toFixed(2)}
+  </p>
 
-                          {!order.customerRating?.rating ? (
-                            <button
-                              onClick={() => {
-                                setRatingModalOrder(order);
-                                setRating(0);
-                                setReview("");
-                              }}
-                              className="px-4 py-2 bg-gray-100 rounded-lg"
-                            >
-                              ⭐ Rate Order
-                            </button>
-                          ) : (
-                            <span className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-semibold">
-                              ⭐ Rated {order.customerRating.rating}/5
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+  {/* BUTTON GROUP */}
+  <div className="flex flex-wrap gap-2">
+
+    {/* CANCEL */}
+   {["Placed", "Accepted"].includes(order.status) && (
+  <button
+   onClick={() =>
+  handleCancelOrder(order._id, order.status, order.paymentMethod)
+}
+    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition"
+  >
+    ❌ Cancel
+  </button>
+)}
+
+
+    {/* REORDER */}
+    <button
+      onClick={() => handleReorder(order)}
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm"
+    >
+      🔁 Reorder
+    </button>
+
+    {/* INVOICE */}
+    {order.status === "Delivered" && (
+      <button
+        onClick={() => handleDownloadInvoice(order._id)}
+        className="px-4 py-2 text-sm font-medium border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition"
+      >
+        📄 Invoice
+      </button>
+    )}
+
+    {/* RATING */}
+    {order.status === "Delivered" && (
+      !order.customerRating?.rating ? (
+        <button
+          onClick={() => {
+            setRatingModalOrder(order);
+            setRating(0);
+            setReview("");
+          }}
+          className="px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+        >
+          ⭐ Rate
+        </button>
+      ) : (
+        <span className="px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg font-semibold">
+          ⭐ {order.customerRating.rating}/5
+        </span>
+      )
+    )}
+
+  </div>
+</div>
                   </div>
                 </div>
               );

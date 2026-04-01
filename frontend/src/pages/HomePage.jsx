@@ -16,7 +16,7 @@ const HomePage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
-  
+  const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [homeProducts, setHomeProducts] = useState([]);
 const [searchProducts, setSearchProducts] = useState([]);
@@ -72,8 +72,14 @@ const clearAllHistory = () => {
 //   setHomePage(nextPage);
 // };
 
-
-
+useEffect(() => {
+  axios.get(`${API}/api/offers`)
+    .then(res => setOffers(res.data))
+    .catch(err => console.error("Offers error", err));
+}, []);
+const getOfferForProduct = (productId) => {
+  return offers.find(o => o.productId?._id === productId);
+};
 useEffect(() => {
   const timer = setTimeout(async () => {
     if (!searchQuery.trim()) {
@@ -347,15 +353,23 @@ useEffect(() => {
         <Link
           key={product._id}
           to={`/product/${product._id}`}
-          className="flex flex-col bg-white rounded-2xl border shadow-sm hover:shadow-lg transition"
+          className={`flex flex-col bg-white rounded-2xl border shadow-sm transition ${
+  product.stock === 0 ? "opacity-50" : "hover:shadow-lg"
+}`}
         >
-          <div className="h-60 flex items-center justify-center border-b">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="max-h-48 object-contain"
-            />
-          </div>
+          <div className="h-60 flex items-center justify-center border-b relative">
+  <img
+    src={product.image}
+    alt={product.name}
+    className="max-h-48 object-contain"
+  />
+
+  {product.stock === 0 && (
+    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
+      Out of Stock
+    </span>
+  )}
+</div>
 
           <div className="p-5 flex flex-col flex-1">
             <h3 className="text-lg font-semibold mb-2">
@@ -385,11 +399,42 @@ useEffect(() => {
               )}
             </p>
 
-            <div className="flex justify-between items-center mt-auto">
-              <span className="text-xl font-bold text-orange-600">
-                ₹{product.price}
-              </span>
-            </div>
+        <div className="flex justify-between items-center mt-auto">
+  {(() => {
+    const offer = getOfferForProduct(product._id);
+
+    if (offer) {
+      const discountedPrice =
+        offer.discountType === "percent"
+          ? product.price - (product.price * offer.discountValue) / 100
+          : product.price - offer.discountValue;
+
+      return (
+        <div>
+          <p className="text-sm text-gray-400 line-through">
+            ₹{product.price}
+          </p>
+
+          <p className="text-xl font-bold text-green-600">
+            ₹{discountedPrice.toFixed(2)}
+          </p>
+
+          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+            {offer.discountType === "percent"
+              ? `${offer.discountValue}% OFF`
+              : `₹${offer.discountValue} OFF`}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="text-xl font-bold text-orange-600">
+        ₹{product.price}
+      </span>
+    );
+  })()}
+</div>
 
             {product.vendorId?.name && (
               <p className="text-xs text-gray-500 mt-3">

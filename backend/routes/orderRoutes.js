@@ -106,6 +106,34 @@ router.post("/place", protect, async (req, res) => {
     const Product = require("../models/product");
     const User = require("../models/user");
 
+    // ✅ STOCK CHECK + REDUCE
+for (const item of products) {
+  const product = await Product.findById(item.productId);
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  if (product.stock < item.quantity) {
+    return res.status(400).json({
+      message: `${product.name} is out of stock`,
+    });
+  }
+
+  // 🔥 REDUCE STOCK
+  product.stock -= item.quantity;
+  await product.save();
+
+  const io = req.app.get("io");
+
+if (io) {
+  io.emit("stockUpdated", {
+    productId: product._id,
+    stock: product.stock,
+  });
+}
+}
+
     const enrichedItems = await Promise.all(
       products.map(async (item) => {
         const prod = await Product.findById(item.productId).lean();
@@ -624,14 +652,141 @@ router.get("/vendor/:vendorId/ratings", protect, async (req, res) => {
   }
 });
 
+
+// GET /api/orders/vendor/:vendorId/reviews
+router.get("/vendor/:vendorId/reviews", protect, async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+
+    const orders = await Order.find({
+      status: "Delivered",
+      "customerRating.rating": { $ne: null },
+      $or: [
+        { "products.vendorId": vendorId },
+        { "products.productId.vendorId": vendorId }
+      ]
+    })
+      .populate("customerId", "name")
+      .select("customerRating customerId createdAt")
+      .sort({ createdAt: -1 });
+
+    // format response
+    const reviews = orders.map(order => ({
+      _id: order._id,
+      rating: order.customerRating.rating,
+      comment: order.customerRating.review,
+      createdAt: order.customerRating.ratedAt || order.createdAt,
+      customer: {
+        name: order.customerId?.name || "Customer"
+      }
+    }));
+
+    res.json(reviews);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch reviews" });
+  }
+});
+
+// 🔥 ARCHIVE ORDER (VENDOR)
+router.put("/:orderId/archive", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Only vendor related order
+    order.isArchivedByVendor = true;
+    await order.save();
+
+    res.json({ message: "Order archived successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Failed to archive order" });
+  }
+});
+// GET /api/orders/vendor/:vendorId/earnings
+router.get("/vendor/:vendorId/earnings", protect, async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+
+    const orders = await Order.find({
+      status: "Delivered",
+      $or: [
+        { "products.vendorId": vendorId },
+        { "products.productId.vendorId": vendorId }
+      ]
+    }).populate("customerId", "name email")
+.select("totalAmount createdAt customerId")
+
+    let totalEarnings = 0;
+    const dailyMap = {};
+    const monthlyMap = {};
+
+    orders.forEach(order => {
+      const amount = Number(order.totalAmount || 0);
+      totalEarnings += amount;
+      
+
+      const date = new Date(order.createdAt);
+
+      // Daily
+      const day = date.toLocaleDateString();
+      dailyMap[day] = (dailyMap[day] || 0) + amount;
+
+      // Monthly
+      const month = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      monthlyMap[month] = (monthlyMap[month] || 0) + amount;
+    });
+
+    res.json({
+      totalEarnings,
+      totalOrders: orders.length,
+      dailyEarnings: Object.entries(dailyMap).map(([date, amount]) => ({
+        date,
+        amount
+      })),
+      monthlyEarnings: Object.entries(monthlyMap).map(([month, amount]) => ({
+        month,
+        amount
+      })),
+      orders
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch earnings" });
+  }
+});
 /**
  * Cancel order (customer only)
  */
 router.put("/:orderId/cancel", protect, async (req, res) => {
   try {
+    const { reason } = req.body;
     const { orderId } = req.params;
 
     const order = await Order.findById(orderId);
+const Product = require("../models/product");
+
+// 🔄 RESTORE STOCK
+for (const item of order.products) {
+  const product = await Product.findById(item.productId);
+
+  if (product) {
+    product.stock += item.quantity;
+    await product.save();
+    const io = req.app.get("io");
+
+if (io) {
+  io.emit("stockUpdated", {
+    productId: product._id,
+    stock: product.stock,
+  });
+}
+  }
+}
 
     if (!order) return res.status(404).json({ message: "Order not found" });
 
@@ -641,16 +796,25 @@ router.put("/:orderId/cancel", protect, async (req, res) => {
     }
 
     // Only allow cancel if order is not delivered or already cancelled
-    if (order.status === "Delivered" || order.status === "Cancelled") {
-      return res.status(400).json({ message: `Cannot cancel a ${order.status} order` });
-    }
+   // Only allow cancel for Placed & Accepted
+const currentStatus = order.status?.toLowerCase();
 
-    // Update status
-    order.status = "Cancelled";
-    await order.save();
+if (!["placed", "accepted"].includes(currentStatus)) {
+  return res.status(400).json({
+    message: `Order cannot be cancelled at status: ${order.status}`
+  });
+}
+
+// Update status
+order.status = "Cancelled";
+order.cancelReason = reason || "";
+await order.save();
 
     // notify vendors + customer
-    await emitToVendorsAndCustomer(req, order._id, "orderUpdated", { status: "Cancelled" });
+   await emitToVendorsAndCustomer(req, order, "orderCancelled", {
+  order: order, // 🔥 VERY IMPORTANT
+  reason: order.cancelReason
+});
 
     res.json({ message: "Order cancelled successfully", order });
   } catch (err) {
@@ -667,9 +831,13 @@ router.put("/:orderId/vendor-reject", protect, async (req, res) => {
     }
 
     const order = await Order.findById(req.params.orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
 
-    // ensure this vendor owns this order
+    // ✅ FIRST CHECK (VERY IMPORTANT)
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // ✅ THEN CHECK OWNERSHIP
     const vendorOwnsOrder = order.products.some(
       p => p.vendorId?.toString() === req.user._id.toString()
     );
@@ -678,10 +846,12 @@ router.put("/:orderId/vendor-reject", protect, async (req, res) => {
       return res.status(403).json({ message: "Not your order" });
     }
 
+    // ✅ STATUS CHECK
     if (order.status !== "Placed") {
       return res.status(400).json({ message: "Cannot reject now" });
     }
 
+    // ✅ UPDATE ORDER
     order.status = "Cancelled";
     order.statusHistory.push({
       status: "Rejected by Vendor",
@@ -690,8 +860,16 @@ router.put("/:orderId/vendor-reject", protect, async (req, res) => {
 
     await order.save();
 
+    // ✅ 🔥 NOTIFICATION (MOST IMPORTANT)
+    await emitToVendorsAndCustomer(req, order._id, "orderCancelled", {
+      order,
+      reason: "Rejected by Vendor"
+    });
+
     res.json({ message: "Order rejected", order });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Reject failed" });
   }
 });
@@ -939,6 +1117,26 @@ router.get("/product/:productId/ratings-summary", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch product ratings" });
   }
 });
+// GET /api/orders/vendor/:vendorId/delivery
+router.get("/vendor/:vendorId/delivery", protect, async (req, res) => {
+  try {
+    const { vendorId } = req.params;
 
+    const orders = await Order.find({
+      $or: [
+        { "products.vendorId": vendorId },
+        { "products.productId.vendorId": vendorId }
+      ],
+      status: { $in: ["Ready for Pickup", "Out for Delivery"] }
+    })
+    .populate("assignedDriver", "name phone vehicleNumber")
+    .populate("customerId", "name phone")
+    .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch delivery orders" });
+  }
+});
 
 module.exports = router;

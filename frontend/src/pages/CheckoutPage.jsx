@@ -12,7 +12,7 @@ const CheckoutPage = () => {
   const location = useLocation();
 const buyNowItem = location.state?.buyNowItem;
 const items = buyNowItem ? [buyNowItem] : cart;
-  
+  const [offers, setOffers] = useState([]);
   const token = localStorage.getItem("token");
 
 const loadRazorpay = () => {
@@ -163,16 +163,49 @@ try {
     // eslint-disable-next-line
   }, []);
 
+const getOffer = (productId) => {
+  return offers.find(o => o.productId?._id === productId);
+};
   /* ================= CART TOTALS ================= */
-  const itemsTotal = useMemo(() => {
-    return items.reduce(
-  (sum, item) => {
+ const itemsTotal = useMemo(() => {
+  return items.reduce((sum, item) => {
     const p = item.productId || item.product;
-    return sum + (p.price || 0) * (item.quantity || 1);
-  },
-  0
-)
-  }, [items]);
+    const offer = getOffer(p._id);
+
+    let price = p.price || 0;
+
+    if (offer) {
+      if (offer.discountType === "percent") {
+        price = price - (price * offer.discountValue) / 100;
+      } else {
+        price = price - offer.discountValue;
+      }
+    }
+
+    return sum + price * (item.quantity || 1);
+  }, 0);
+}, [items, offers]);
+
+
+const totalSavings = useMemo(() => {
+  return items.reduce((sum, item) => {
+    const p = item.productId || item.product;
+    const offer = getOffer(p._id);
+
+    if (!offer) return sum;
+
+    let discount = 0;
+
+    if (offer.discountType === "percent") {
+      discount = (p.price * offer.discountValue) / 100;
+    } else {
+      discount = offer.discountValue;
+    }
+
+    return sum + discount * item.quantity;
+  }, 0);
+}, [items, offers]);
+
   const serviceCharge = useMemo(
     () => +(itemsTotal * SERVICE_CHARGE_PERCENT) / 100,
     [itemsTotal]
@@ -198,6 +231,15 @@ try {
       Number(tip || 0);
     return +total.toFixed(2);
   }, [itemsTotal, serviceCharge, gst, platformFee, deliveryCharge, tip]);
+
+useEffect(() => {
+  axios.get(`${API}/api/offers`)
+    .then(res => setOffers(res.data))
+    .catch(err => console.error("Offers error", err));
+}, []);
+
+
+
 
   useEffect(() => {
   if (itemsTotal > 499) {
@@ -247,6 +289,28 @@ try {
 
   /* ================= PLACE ORDER ================= */
   const handleOrder = async () => {
+    // 🔒 CHECK STOCK BEFORE ORDER (SIMPLE VERSION)
+for (const item of items) {
+  const product = item.productId || item.product;
+
+  if (product.stock === 0) {
+    Swal.fire({
+      icon: "error",
+      title: "Out of Stock",
+      text: `${product.name} is unavailable`,
+    });
+    return;
+  }
+
+  if (item.quantity > product.stock) {
+    Swal.fire({
+      icon: "error",
+      title: "Stock Limit",
+      text: `Only ${product.stock} available for ${product.name}`,
+    });
+    return;
+  }
+}
     validateFields();
     if (!isFormValid) {
       Swal.fire({
@@ -424,9 +488,40 @@ try {
         </p>
       </div>
 
-      <p className="text-sm font-semibold">
-        ₹{(productData.price * item.quantity).toFixed(2)}
-      </p>
+      {(() => {
+  const offer = getOffer(productData._id);
+
+  if (offer) {
+    const discountedPrice =
+      offer.discountType === "percent"
+        ? productData.price - (productData.price * offer.discountValue) / 100
+        : productData.price - offer.discountValue;
+
+    return (
+      <div className="text-right">
+        <p className="text-xs text-gray-400 line-through">
+          ₹{(productData.price * item.quantity).toFixed(2)}
+        </p>
+
+        <p className="text-sm font-semibold text-green-600">
+          ₹{(discountedPrice * item.quantity).toFixed(2)}
+        </p>
+
+        <span className="text-xs text-red-500">
+          {offer.discountType === "percent"
+            ? `${offer.discountValue}% OFF`
+            : `₹${offer.discountValue} OFF`}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <p className="text-sm font-semibold">
+      ₹{(productData.price * item.quantity).toFixed(2)}
+    </p>
+  );
+})()}
     </div>
   );
 })}
@@ -464,6 +559,13 @@ try {
       <span>Delivery charge</span>
       <span>₹{deliveryCharge.toFixed(2)}</span>
     </div>
+
+{totalSavings > 0 && (
+  <p className="text-green-600 text-sm font-medium">
+    🎉 You saved ₹{totalSavings.toFixed(2)} on this order!
+  </p>
+)}
+
 
     <div className="flex justify-between font-bold border-t pt-2">
       <span>Grand Total</span>

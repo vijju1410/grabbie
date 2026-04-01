@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-
+import { io } from "socket.io-client";
 const CartContext = createContext();
 const API = process.env.REACT_APP_API_URL;
 
@@ -36,9 +36,27 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchCart();
-  }, [token]);
+  fetchCart();
 
+  const socket = io(API, {
+    withCredentials: true,
+  });
+
+  socket.on("connect", () => {
+    console.log("✅ Socket connected:", socket.id);
+  });
+
+  socket.on("stockUpdated", (data) => {
+    console.log("🔥 Stock updated:", data);
+
+    // refresh cart automatically
+    fetchCart();
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, [token]);
   return (
     <CartContext.Provider value={{ cart, setCart, fetchCart, clearCart }}>
       {children}
