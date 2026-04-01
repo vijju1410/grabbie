@@ -44,7 +44,8 @@ const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 const stats = [
   { title: "Total Deliveries", value: driverStats.totalDeliveries, icon: "📦" },
   { title: "Total Earnings", value: `₹${driverStats.totalEarnings}`, icon: "💰" },
-  { title: "Average Rating", value: driverStats.averageRating, icon: "⭐" }
+  { title: "Average Rating", value: driverStats.averageRating, icon: "⭐" },
+  { title: "Active Orders", value: activeOrders.length, icon: "🚚" },
 ];
 
 
@@ -96,11 +97,11 @@ const fetchDriverStats = async () => {
     { id: "navigation", label: "Navigation", icon: "🗺️" },
      { id: "history", label: "Delivery History", icon: "📜" },
     { id: "earnings", label: "Earnings", icon: "💰" },
-    { id: "wallet", label: "Wallet", icon: "💳" },
+    
     { id: "ratings", label: "Ratings", icon: "⭐" },
     { id: "notifications", label: "Notifications", icon: "🔔" },
     { id: "profile", label: "Profile", icon: "👤" },
-    { id: "support", label: "Support", icon: "🆘" }
+   
   ];
 
   const getStatusColor = (status) => {
@@ -188,31 +189,55 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   });
 
   // ================= COMPONENTS =================
-  const StatsCard = ({ title, value, change, icon }) => (
-    <div className="bg-white rounded-xl shadow p-4 flex flex-col">
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-2xl">{icon}</div>
-        <span className="text-green-600 font-semibold text-sm">{change}</span>
-      </div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-gray-500 text-sm">{title}</div>
+  const StatsCard = ({ title, value, icon }) => (
+  <div className="
+   bg-white rounded-2xl p-4
+    shadow-sm hover:shadow-lg
+    transition-all duration-300
+    border border-gray-100
+    hover:-translate-y-1
+  ">
+    
+    <div className="flex items-center justify-between mb-3">
+      <div className="text-3xl">{icon}</div>
     </div>
-  );
 
-  const WeeklyChart = () => (
-    <div className="bg-white rounded-xl shadow p-4">
-      <h2 className="text-lg font-semibold mb-3">Weekly Earnings</h2>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={weeklyData}>
-            <XAxis dataKey="day" />
-            <Tooltip />
-            <Bar dataKey="amount" fill="#f97316" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
+    <h2 className="text-2xl font-bold text-gray-800">
+      {value}
+    </h2>
+
+    <p className="text-sm text-gray-500 mt-1">
+      {title}
+    </p>
+  </div>
+);
+const WeeklyChart = () => (
+ <div className="bg-white rounded-xl shadow p-3 flex flex-col">
+    <h2 className="text-sm font-semibold text-gray-600 mb-2">
+      Weekly Earnings
+    </h2>
+
+    <ResponsiveContainer width="100%" height={90}>
+      <BarChart data={weeklyData}>
+        <XAxis 
+          dataKey="day" 
+          tick={{ fontSize: 12 }} 
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip 
+          contentStyle={{ borderRadius: "8px", border: "none" }}
+        />
+        <Bar 
+          dataKey="amount" 
+          fill="#f97316" 
+          radius={[10, 10, 0, 0]} 
+          barSize={16}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+);
 
   // Helper to get vendor info for an order (prefers snapshot then populated vendor)
   const resolveVendorForOrder = (order) => {
@@ -234,107 +259,111 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     };
     return null;
   };
+const RecentOrders = ({ ordersList }) => (
+  <div className="space-y-3">
 
-  const RecentOrders = ({ ordersList }) => (
-    <div className="space-y-4">
-      {ordersList
-        .filter(o => !searchTerm || o._id.includes(searchTerm))
-        .map((order) => {
-          const vendor = resolveVendorForOrder(order);
-          const mapsQuery = vendor?.address ? encodeURIComponent(vendor.address) : order.deliveryDetails?.addressLine1 || "";
-          const mapsUrl = vendor?.address
-            ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`
-            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryDetails?.addressLine1 || "")}`;
+    {ordersList.map((order) => {
 
-          return (
-            <div key={order._id} className="p-4 border rounded-lg hover:shadow bg-white">
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <p className="font-semibold text-orange-600">Order ID: {order._id}</p>
-                  <p className="text-sm">{order.customerId?.name} - {order.customerId?.email}</p>
-                  <p className="text-sm">
-                    Status:
-                    <span className={`px-2 py-1 rounded ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                 {order.status === "Ready for Pickup" && !order.assignedDriver && (
-  <button
-    onClick={() => assignOrder(order._id)}
-    className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-sm"
-  >
-    Accept
-  </button>
-)}
+      const vendor = resolveVendorForOrder(order);
 
-                  {order.assignedDriver && order.status === "Out for Delivery" &&
-                    <button onClick={() => deliverOrder(order._id)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">
-                      Mark Delivered
-                    </button>
-                  }
-                </div>
-              </div>
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${
+        encodeURIComponent(order.deliveryDetails?.addressLine1 || "")
+      }`;
 
-              <div className="mb-2">
-                <p className="font-semibold">Delivery Address:</p>
-                <p className="text-sm">
-                  {order.deliveryDetails?.fullName}, {order.deliveryDetails?.phone}<br/>
-                  {order.deliveryDetails?.email}<br/>
-                  {order.deliveryDetails?.addressLine1}{order.deliveryDetails?.addressLine2 ? `, ${order.deliveryDetails.addressLine2}` : ""}<br/>
-                  {order.deliveryDetails?.city}, {order.deliveryDetails?.state} - {order.deliveryDetails?.postalCode}<br/>
-                  {order.deliveryDetails?.country}
-                </p>
-              </div>
+      return (
+        <div
+          key={order._id}
+          className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
+        >
 
-              <div className="mb-2">
-                <p className="font-semibold">Payment: {order.paymentMethod}</p>
-                <p className="font-semibold">Total Amount: ₹{order.totalAmount}</p>
-              </div>
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-sm font-semibold text-orange-600">
+              Order #{order._id.slice(-6)}
+            </p>
 
-              <div className="mb-2">
-                <p className="font-semibold">Products:</p>
-                {order.products.map((p, idx) => (
-                  <div key={idx} className="flex items-center space-x-2 text-sm mb-1">
-                    <img
-                      src={p.productId?.image ? p.productId.image : "https://via.placeholder.com/40"}
-                      alt={p.productId?.name}
-                      className="w-10 h-10 rounded"
-                    />
-                    <span>{p.productId?.name} x {p.quantity} (₹{p.productId?.price})</span>
-                  </div>
-                ))}
-              </div>
+            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+              {order.status}
+            </span>
+          </div>
 
-              {/* Vendor pickup info (first product's vendor) */}
-              {vendor && (
-                <div className="mb-2 border-t pt-2">
-                  <p className="font-semibold">Pickup Location</p>
-                  <p className="text-sm">
-                    <strong>{vendor.name}</strong><br/>
-                    {vendor.address && <>{vendor.address}<br/></>}
-                    {vendor.phone && <span>📞 {vendor.phone}</span>}
-                  </p>
-                  <div className="mt-2">
-                    <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">Open in Google Maps</a>
-                  </div>
-                </div>
-              )}
+          {/* CUSTOMER */}
+          <div className="text-sm">
+            <p className="font-medium">{order.customerId?.name}</p>
+            <p className="text-gray-500 text-xs">{order.deliveryDetails?.phone}</p>
+          </div>
 
+          {/* FULL ADDRESS */}
+          <p className="text-xs text-gray-500 mt-1">
+            📍 {order.deliveryDetails?.addressLine1}, {order.deliveryDetails?.city}, {order.deliveryDetails?.state} - {order.deliveryDetails?.postalCode}
+          </p>
+
+          {/* PRODUCTS (ALL ITEMS) */}
+          <div className="mt-2 text-xs text-gray-600 space-y-1">
+            {order.products?.map((item, i) => (
+              <p key={i}>
+                🛒 {item.productId?.name} x {item.quantity}
+              </p>
+            ))}
+          </div>
+
+          {/* VENDOR INFO */}
+          {vendor && (
+            <div className="mt-2 text-xs text-gray-500">
+              🏪 {vendor.name} <br />
+              📍 {vendor.address}
             </div>
-        )})}
-    </div>
-  );
+          )}
 
+          {/* PRICE + MAP */}
+          <div className="flex justify-between items-center mt-3">
+            <p className="text-sm font-bold">₹{order.totalAmount}</p>
+
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-blue-500 hover:underline"
+            >
+              Navigate →
+            </a>
+          </div>
+
+          {/* ACTION BUTTON */}
+          <div className="mt-3">
+            {order.status === "Ready for Pickup" && !order.assignedDriver && (
+              <button
+                onClick={() => assignOrder(order._id)}
+                className="w-full bg-orange-500 text-white py-2 rounded text-sm hover:bg-orange-600"
+              >
+                Accept Order
+              </button>
+            )}
+
+            {order.assignedDriver && order.status === "Out for Delivery" && (
+              <button
+                onClick={() => deliverOrder(order._id)}
+                className="w-full bg-green-500 text-white py-2 rounded text-sm hover:bg-green-600"
+              >
+                Mark Delivered
+              </button>
+            )}
+          </div>
+
+        </div>
+      );
+    })}
+
+  </div>
+);
   // ================= ORDERS WITH TABS =================
   const OrdersSection = () => {
     const [tab, setTab] = useState("available");
     const displayedOrders = tab === "available" ? availableOrders : activeOrders;
 
     return (
-      <div className="bg-white rounded-xl shadow p-6">
-        <h1 className="text-xl font-semibold mb-4">Orders</h1>
+      <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+       
 
         <div className="flex space-x-2 mb-4">
           <button
@@ -351,7 +380,9 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
           </button>
         </div>
 
-        <RecentOrders ordersList={displayedOrders} />
+       <div className="flex-1">
+  <RecentOrders ordersList={displayedOrders} />
+</div>
       </div>
     );
   };
@@ -423,31 +454,82 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   };
 
   // ================= DASHBOARD =================
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s, i) => <StatsCard key={i} {...s} />)}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WeeklyChart />
-        <OrdersSection />
-      </div>
+const renderDashboard = () => (
+  <div className="space-y-6">
+
+    
+
+    {/* 📊 STATS */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {stats.map((s, i) => (
+        <div key={i} className="bg-white rounded-xl p-4 shadow-sm border">
+          <div className="flex justify-between">
+            <span className="text-xl">{s.icon}</span>
+            <span className="text-xs text-gray-400">Today</span>
+          </div>
+
+          <h2 className="text-xl font-bold mt-2">{s.value}</h2>
+          <p className="text-xs text-gray-500">{s.title}</p>
+        </div>
+      ))}
     </div>
-  );
+
+    {/* 🔥 MAIN CONTENT */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      {/* ORDERS BIG */}
+      <div className="lg:col-span-2 bg-white rounded-xl shadow p-4 h-[480px] flex flex-col">
+        <h2 className="font-semibold mb-3">Orders</h2>
+
+        <div className="flex-1 overflow-y-auto">
+          <OrdersSection />
+        </div>
+      </div>
+
+      {/* CHART SMALL */}
+      <div className="bg-white rounded-xl shadow p-4 h-[480px] flex flex-col">
+        <h2 className="font-semibold mb-3">Weekly Earnings</h2>
+
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={weeklyData}>
+            <XAxis dataKey="day" />
+            <Tooltip />
+            <Bar dataKey="amount" fill="#f97316" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+    </div>
+  </div>
+);
 
   const AvailabilityToggle = ({ availability, onToggle }) => (
   <button
     onClick={onToggle}
-    className={`relative w-full h-14 rounded-full transition-all duration-300 shadow-inner
-      ${availability ? "bg-green-500" : "bg-gray-300"}`}
+    className={`
+      w-full flex items-center justify-between px-3 py-2 rounded-lg
+      text-sm font-medium transition-all duration-200
+      ${availability
+        ? "bg-green-100 text-green-700"
+        : "bg-gray-100 text-gray-600"}
+    `}
   >
+    <span>
+      {availability ? "🟢 Online" : "⚫ Offline"}
+    </span>
+
     <span
-      className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-full shadow-lg
-        transform transition-transform duration-300
-        ${availability ? "translate-x-[calc(100%-3rem)]" : "translate-x-0"}`}
-    />
-    <span className="absolute inset-0 flex items-center justify-center font-semibold text-white tracking-wide">
-      {availability ? "ONLINE" : "OFFLINE"}
+      className={`
+        w-8 h-4 flex items-center rounded-full p-0.5
+        ${availability ? "bg-green-500" : "bg-gray-400"}
+      `}
+    >
+      <span
+        className={`
+          w-3 h-3 bg-white rounded-full shadow transform transition-all
+          ${availability ? "translate-x-4" : "translate-x-0"}
+        `}
+      />
     </span>
   </button>
 );
@@ -554,25 +636,26 @@ googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
       </span>
     </div>
   </div>
-</div>
+</div><div className="bg-white rounded-2xl shadow p-4 space-y-3">
+  <h3 className="text-base font-semibold">Account</h3>
 
+  <button
+    onClick={() => toast.success("Support will contact you soon")}
+    className="w-full py-2.5 rounded-xl bg-orange-500 text-white hover:bg-orange-600 text-sm"
+  >
+    Contact Support
+  </button>
 
-        <div className="bg-white rounded-2xl shadow p-4 space-y-3">
-          <h3 className="text-base font-semibold">Account</h3>
-
-         
-
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/login";
-            }}
-            className="w-full py-2.5 rounded-xl bg-gray-900 text-white hover:bg-black text-sm"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+  <button
+    onClick={() => {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }}
+    className="w-full py-2.5 rounded-xl bg-gray-900 text-white hover:bg-black text-sm"
+  >
+    Logout
+  </button>
+</div>      </div>
 
       {/* Modal */}
       
@@ -598,7 +681,7 @@ const NotificationsSection = () => (
   </div>
 );
 const WalletSection = () => (
-  <div className="bg-white rounded-xl shadow p-6 space-y-4">
+  <div className="bg-white rounded-xl shadow p-6 space-y-2">
     <h1 className="text-xl font-semibold">Driver Wallet</h1>
 
     <div className="bg-green-100 p-4 rounded-lg">
@@ -625,7 +708,7 @@ const RatingsSection = () => (
   </div>
 );
 const SupportSection = () => (
-  <div className="bg-white rounded-xl shadow p-6 space-y-3">
+  <div className="bg-white rounded-xl shadow p-6 space-y-2">
     <h1 className="text-xl font-semibold">Support</h1>
 
     <p className="text-gray-600">
@@ -697,14 +780,11 @@ const DeliveryHistorySection = () => {
     case "notifications":
       return <NotificationsSection />;
 
-    case "wallet":
-      return <WalletSection />;
 
     case "ratings":
       return <RatingsSection />;
 
-    case "support":
-      return <SupportSection />;
+    
 
     default:
       return renderDashboard();
@@ -755,7 +835,7 @@ const DeliveryHistorySection = () => {
 }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {mobileMenuOpen && (
   <div
     className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
@@ -765,117 +845,186 @@ const DeliveryHistorySection = () => {
      {/* ✅ NEW SIDEBAR PASTE HERE */}
 <aside
   className={`
-  fixed md:static z-40 top-0 left-0 h-full
-  bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900
-  text-gray-200
-  transition-all duration-300
-  ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-  md:translate-x-0
-  ${sidebarCollapsed ? "md:w-20" : "md:w-64"}
-  w-64
-`}
+    fixed top-0 left-0 h-screen
+    bg-white/90 backdrop-blur-md border-r border-gray-200
+    flex flex-col z-40
+    transition-all duration-300 ease-in-out
+
+    ${sidebarCollapsed ? "w-20" : "w-64"}
+    ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+  `}
 >
 
-{/* LOGO */}
-<div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-  {!sidebarCollapsed && (
-    <span className="text-xl font-bold text-orange-400 tracking-wide">
-      Driver Panel
-    </span>
-  )}
-
-  <button
-    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-    className="text-gray-400 hover:text-white text-lg"
-  >
-    {sidebarCollapsed ? "➡" : "⬅"}
-  </button>
-</div>
-
-{/* MENU */}
-<nav className="flex flex-col mt-4 px-3 space-y-1">
-
-{menuItems.map((item) => {
-
-const active = activeSection === item.id;
-
-return (
-
-<button
-key={item.id}
-onClick={() => {
-setActiveSection(item.id);
-setMobileMenuOpen(false);
-}}
-
-className={`
-group flex items-center gap-3 px-3 py-3 rounded-lg
-transition-all duration-200
-${active
-? "bg-orange-500 text-white shadow-md"
-: "text-gray-300 hover:bg-gray-700 hover:text-white"}
-`}
+  {/* LOGO */}
+  <div className="flex items-center justify-between px-5 py-4 border-b">
+    {!sidebarCollapsed && (
+    <span
+  className={`
+    text-xl font-bold text-orange-500 whitespace-nowrap
+    transition-all duration-300
+    ${sidebarCollapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"}
+  `}
 >
-
-<div
-className={`
-flex items-center justify-center w-9 h-9 rounded-lg
-${active ? "bg-white/20" : "bg-gray-700 group-hover:bg-gray-600"}
-`}
->
-<span className="text-lg">{item.icon}</span>
-</div>
-
-{!sidebarCollapsed && (
-<span className="text-sm font-medium tracking-wide">
-{item.label}
+  Grabbie 🚀
 </span>
-)}
+    )}
 
-</button>
+    <button
+      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+      className="text-gray-500 hover:text-orange-500 text-lg"
+    >
+      {sidebarCollapsed ? "➡" : "⬅"}
+    </button>
+  </div>
 
-);
+  {/* AVAILABILITY */}
+  <div className="hidden md:block px-4 py-3 border-b">
+    {!sidebarCollapsed && (
+      <p className="text-xs text-gray-400 mb-2">Availability</p>
+    )}
+    <AvailabilityToggle
+      availability={availability}
+      onToggle={toggleAvailability}
+    />
+  </div>
 
+  {/* MENU */}
+  <nav className="flex-1 overflow-y-auto mt-4 px-3 space-y-1">
+
+    {menuItems.map((item) => {
+  const active = activeSection === item.id;
+
+  return (
+    <button
+      key={item.id}
+      onClick={() => {
+        setActiveSection(item.id);
+        setMobileMenuOpen(false);
+      }}
+      className={`
+        group flex items-center gap-3 px-3 py-2.5 rounded-xl
+        transition-all duration-200 ease-in-out w-full text-left
+
+        ${active
+          ? "bg-gradient-to-r from-orange-100 to-orange-50 text-orange-600 shadow-sm"
+          : "text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:scale-[1.02]"
+        }
+      `}
+    >
+
+      {/* LEFT ACTIVE INDICATOR */}
+      <div
+        className={`
+          w-1 h-6 rounded-full transition-all
+          ${active ? "bg-orange-500" : "bg-transparent group-hover:bg-orange-300"}
+        `}
+      />
+
+      {/* ICON BOX */}
+      <div
+        className={`
+          flex items-center justify-center w-9 h-9 rounded-lg
+          ${active
+            ? "bg-orange-200 shadow-inner"
+            : "bg-gray-100 group-hover:bg-orange-100 group-hover:shadow-sm"}
+        `}
+      >
+        <span className="text-lg transition-transform duration-200 group-hover:scale-110">
+          {item.icon}
+        </span>
+      </div>
+
+      {/* LABEL */}
+      {!sidebarCollapsed && (
+        <span
+  className={`
+    text-sm font-medium transition-all duration-200
+    ${sidebarCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"}
+  `}
+>
+  {item.label}
+</span>
+      )}
+
+    </button>
+  );
 })}
 
-</nav>
+  </nav>
 
-
-
+  {/* LOGOUT */}
+  <div className="mt-auto px-4 pb-4">
+    <button
+      onClick={() => {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }}
+      className="w-full py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600 text-sm"
+    >
+      Logout
+    </button>
+  </div>
 
 </aside>
 
-      <main className="flex-1 flex flex-col">
-        <header className="bg-white shadow p-4 flex justify-between items-center">
+      <main
+  className={`
+    flex-1 flex flex-col
+    ml-64
+    ${sidebarCollapsed ? "ml-20" : "ml-64"}
+    transition-all duration-300
+  `}
+>
+    <div className="p-6 flex-1 overflow-hidden ml-0">
+  <div className="h-full overflow-y-auto pr-2">
+
+    {/* 📱 MOBILE TOP BAR */}
+    <div className="flex items-center justify-between mb-4 md:hidden">
+
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-3">
+    <button
+      onClick={() => setMobileMenuOpen(true)}
+      className="text-2xl"
+    >
+      ☰
+    </button>
+
+    <h1 className="text-xl font-bold capitalize">
+      {activeSection}
+    </h1>
+  </div>
+
+  {/* RIGHT SIDE (ONLINE BUTTON) */}
   <button
-    className="md:hidden text-2xl"
-    onClick={() => setMobileMenuOpen(true)}
+    onClick={toggleAvailability}
+    className={`
+      px-3 py-1.5 rounded-full text-xs font-medium
+      flex items-center gap-2
+      ${availability
+        ? "bg-green-100 text-green-700"
+        : "bg-gray-200 text-gray-600"}
+    `}
   >
-    ☰
+    <span
+      className={`w-2 h-2 rounded-full ${
+        availability ? "bg-green-500" : "bg-gray-400"
+      }`}
+    />
+    {availability ? "Online" : "Offline"}
   </button>
 
-          <h1 className="text-lg font-semibold">Driver Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-  <span className="text-xl">🔔</span>
-
-  {driverStats.notificationsCount > 0 && (
-    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
-      {driverStats.notificationsCount}
-    </span>
-  )}
 </div>
-           <div className="flex items-center space-x-2">
-             <img src={profile?.profileImage ? profile.profileImage
- : "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?w=50&h=50&fit=crop"} alt={profile?.name || "Driver"} className="w-10 h-10 rounded-full"/>
-             <div className="hidden sm:block">
-               <p className="font-semibold">{profile?.name || "Driver"}</p>
-               <p className="text-xs text-gray-500">Driver</p>
-             </div>
-           </div>
-          </div>
-        </header>
-        <div className="p-6 flex-1 overflow-auto">{renderContent()}</div>
+
+    {/* 💻 DESKTOP TITLE */}
+    <h1 className="hidden md:block text-2xl font-bold text-gray-800 mb-4 capitalize">
+      {activeSection}
+    </h1>
+
+    {renderContent()}
+    
+  </div>
+</div>
       </main>
     </div>
   );

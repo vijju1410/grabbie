@@ -68,8 +68,7 @@ function AppWrapper() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
 
-      {user?.role !== "vendor" && <Header />}
-      <Chatbot />
+{user?.role !== "vendor" && user?.role !== "driver" && <Header />}      <Chatbot />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
