@@ -22,7 +22,9 @@ import Chatbot from "./components/Chatbot";
 // New role-specific pages
 import DriverDashboardPage from './pages/DriverDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
-
+import OffersPage from "./pages/OffersPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 function AppWrapper() {
   <Toaster position="top-right" />
   const location = useLocation();
@@ -68,7 +70,8 @@ function AppWrapper() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
 
-{user?.role !== "vendor" && user?.role !== "driver" && <Header />}      <Chatbot />
+{user?.role !== "vendor" && user?.role !== "driver" && user?.role !== "admin" && <Header />} 
+    <Chatbot />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
@@ -82,8 +85,9 @@ function AppWrapper() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/resubmit" element={<ResubmitPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
-
-
+<Route path="/offers" element={<OffersPage />} />
+<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         {/* Authenticated user routes */}
         <Route path="/profile" element={token ? <ProfilePage /> : <Navigate to="/login" />} />
 

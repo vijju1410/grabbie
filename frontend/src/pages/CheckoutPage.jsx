@@ -325,15 +325,17 @@ for (const item of items) {
 
     setLoading(true);
 
-    const charges = {
-      itemsTotal: +itemsTotal.toFixed(2),
-      serviceCharge: +serviceCharge.toFixed(2),
-      gst: +gst.toFixed(2),
-      platformFee: +platformFee.toFixed(2),
-      deliveryCharge: +Number(deliveryCharge || 0).toFixed(2),
-      tip: +Number(tip || 0).toFixed(2),
-      grandTotal: +grandTotal.toFixed(2),
-    };
+  const charges = {
+  itemsTotal: +itemsTotal.toFixed(2),
+  serviceCharge: +serviceCharge.toFixed(2),
+  gst: +gst.toFixed(2),
+  platformFee: +platformFee.toFixed(2),
+
+  deliveryCharge: itemsTotal > 499 ? 0 : 30, // ✅ FIXED
+
+  tip: +Number(tip || 0).toFixed(2),
+  grandTotal: +grandTotal.toFixed(2),
+};
 
     try {
       await axios.post(

@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
         { expiryDate: null },
         { expiryDate: { $gte: today } }
       ]
-    }).populate("productId", "name price");
+    }).populate("productId", "name price image");
 
     res.json(offers);
 

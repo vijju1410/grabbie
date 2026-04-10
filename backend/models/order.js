@@ -53,7 +53,10 @@ const chargesSchema = new mongoose.Schema({
   serviceCharge: { type: Number, default: 0 },
   gst: { type: Number, default: 0 },
   platformFee: { type: Number, default: 0 },
+
   deliveryCharge: { type: Number, default: 0 },
+  driverEarning: { type: Number, default: 0 }, // ✅ ADD THIS
+
   tip: { type: Number, default: 0 },
   grandTotal: { type: Number, default: 0 }
 }, { _id: false });

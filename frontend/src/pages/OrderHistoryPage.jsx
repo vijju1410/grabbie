@@ -348,30 +348,33 @@ const directionsService = new window.google.maps.DirectionsService();
                 ((currentIndex + 1) / TIMELINE_STEPS.length) * 100;
 
               return (
-                <div key={order._id} className="bg-white rounded-xl shadow">
+                <div key={order._id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
                   <div className="p-6">
                     {/* HEADER */}
-                    <div className="flex justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="text-green-500" />
-                        <div>
-                          <h3 className="font-semibold">
-                            Order #{order._id.slice(-6)}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
+                  <div className="flex justify-between mb-4 items-center">
+  <div className="flex items-center gap-3">
+    <div className="bg-green-100 p-2 rounded-full">
+      <CheckCircle className="text-green-600" size={20} />
+    </div>
 
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm ${
-                          statusBadge[order.status]
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </div>
+    <div>
+      <h3 className="font-semibold text-lg">
+        Order #{order._id.slice(-6)}
+      </h3>
+      <p className="text-sm text-gray-500">
+        {new Date(order.createdAt).toLocaleString()}
+      </p>
+    </div>
+  </div>
+
+  <span
+    className={`px-3 py-1 rounded-full text-xs font-medium ${
+      statusBadge[order.status]
+    }`}
+  >
+    {order.status}
+  </span>
+</div>
 
                     {/* TIMELINE */}
                     {isCancelled ? (
@@ -379,40 +382,40 @@ const directionsService = new window.google.maps.DirectionsService();
                         This order was cancelled
                       </p>
                     ) : (
-                      <div className="relative mb-6">
-                        <div className="absolute top-3 left-0 w-full h-1 bg-gray-300">
-                          <div
-                            className="h-1 bg-green-500"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
+                    <div className="relative mb-6">
+  <div className="absolute top-3 left-0 w-full h-1 bg-gray-200 rounded">
+    <div
+      className="h-1 bg-green-500 rounded transition-all duration-500"
+      style={{ width: `${progress}%` }}
+    />
+  </div>
 
-                        <div className="flex justify-between relative z-10">
-                          {TIMELINE_STEPS.map((step, i) => (
-                            <div
-                              key={step}
-                              className="flex flex-col items-center w-full"
-                            >
-                              <div
-                                className={`w-6 h-6 rounded-full border-2 ${
-                                  i <= currentIndex
-                                    ? "bg-green-500 border-green-500"
-                                    : "bg-white border-gray-300"
-                                }`}
-                              />
-                              <span
-                                className={`mt-2 text-sm ${
-                                  i <= currentIndex
-                                    ? "text-green-600 font-semibold"
-                                    : "text-gray-400"
-                                }`}
-                              >
-                                {step}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+  <div className="flex justify-between relative z-10">
+    {TIMELINE_STEPS.map((step, i) => (
+      <div key={step} className="flex flex-col items-center w-full">
+        <div
+          className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded-full border-2 ${
+            i <= currentIndex
+              ? "bg-green-500 text-white border-green-500"
+              : "bg-white text-gray-400 border-gray-300"
+          }`}
+        >
+          {i + 1}
+        </div>
+
+        <span
+          className={`mt-2 text-xs text-center ${
+            i <= currentIndex
+              ? "text-green-600 font-semibold"
+              : "text-gray-400"
+          }`}
+        >
+          {step}
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
                     )}
                     {order.status === "Out for Delivery" && isLoaded && (
   <div className="mt-6">
@@ -527,25 +530,105 @@ const directionsService = new window.google.maps.DirectionsService();
           
                     {/* PRODUCTS */}
                     {order.products.map((item, i) => (
-  <div key={i}>
-    <span>
-      {item.quantity}x {item.productId?.name || "Product"}
-    </span>
-    <span>
-      ₹{((item.productId?.price || 0) * item.quantity).toFixed(2)}
-    </span>
+  <div key={i} className="flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 hover:bg-gray-100 transition">
+  <div className="flex items-center gap-3">
+    <img
+  src={
+    item.productId?.image
+      ? item.productId.image
+      : "https://via.placeholder.com/100"
+  }
+  alt={item.productId?.name}
+  className="w-12 h-12 object-cover rounded-lg"
+/>
+
+    <div>
+      <p className="font-medium text-gray-800">
+        {item.productId?.name || "Product"}
+      </p>
+      <p className="text-sm text-gray-500">
+        ₹{item.productId?.price} × {item.quantity}
+      </p>
+    </div>
   </div>
+
+  <p className="font-semibold text-gray-800">
+    ₹{((item.productId?.price || 0) * item.quantity).toFixed(2)}
+  </p>
+</div>
 ))}
+
+
+{/* ================= PRICE DETAILS ================= */}
+<div className="mt-4 border-t pt-4">
+
+  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+    Price Details
+  </h4>
+
+  <div className="space-y-1 text-sm text-gray-600">
+
+    <div className="flex justify-between">
+      <span>Items Total</span>
+      <span>₹{order.charges?.itemsTotal?.toFixed(2)}</span>
+    </div>
+
+    {order.charges?.serviceCharge > 0 && (
+      <div className="flex justify-between">
+        <span>Service Charge</span>
+        <span>₹{order.charges.serviceCharge}</span>
+      </div>
+    )}
+
+    {order.charges?.platformFee > 0 && (
+      <div className="flex justify-between">
+        <span>Platform Fee</span>
+        <span>₹{order.charges.platformFee}</span>
+      </div>
+    )}
+
+    {order.charges?.gst > 0 && (
+      <div className="flex justify-between">
+        <span>GST</span>
+        <span>₹{order.charges.gst}</span>
+      </div>
+    )}
+
+    {order.charges?.deliveryCharge > 0 && (
+      <div className="flex justify-between">
+        <span>Delivery Charge</span>
+        <span>₹{order.charges.deliveryCharge}</span>
+      </div>
+    )}
+
+    {order.charges?.tip > 0 && (
+      <div className="flex justify-between">
+        <span>Tip</span>
+        <span>₹{order.charges.tip}</span>
+      </div>
+    )}
+
+    {/* TOTAL */}
+<div className="border-t pt-3 mt-3 flex justify-between font-bold text-lg text-black">  
+<span>
+  {order.status === "Cancelled" ? "Order Value" : "Total Paid"}
+</span>      <span>₹{Number(order.totalAmount).toLocaleString("en-IN", {
+  minimumFractionDigits: 2,
+})}</span>
+    </div>
+
+  </div>
+</div>
                     {/* ACTIONS */}
          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
   {/* PRICE */}
-  <p className="text-xl font-bold text-gray-800">
+  {/* <p className="text-xl font-bold text-gray-800">
     ₹{order.totalAmount.toFixed(2)}
-  </p>
+  </p> */}
 
   {/* BUTTON GROUP */}
-  <div className="flex flex-wrap gap-2">
+  <div className="flex flex-wrap gap-2 items-center">
 
     {/* CANCEL */}
    {["Placed", "Accepted"].includes(order.status) && (
@@ -553,8 +636,7 @@ const directionsService = new window.google.maps.DirectionsService();
    onClick={() =>
   handleCancelOrder(order._id, order.status, order.paymentMethod)
 }
-    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition"
-  >
+className="px-4 py-2 text-sm font-medium border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition"  >
     ❌ Cancel
   </button>
 )}
@@ -563,8 +645,7 @@ const directionsService = new window.google.maps.DirectionsService();
     {/* REORDER */}
     <button
       onClick={() => handleReorder(order)}
-      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm"
-    >
+className="px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow"    >
       🔁 Reorder
     </button>
 
@@ -572,8 +653,7 @@ const directionsService = new window.google.maps.DirectionsService();
     {order.status === "Delivered" && (
       <button
         onClick={() => handleDownloadInvoice(order._id)}
-        className="px-4 py-2 text-sm font-medium border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition"
-      >
+className="px-4 py-2 text-sm font-medium border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition"      >
         📄 Invoice
       </button>
     )}

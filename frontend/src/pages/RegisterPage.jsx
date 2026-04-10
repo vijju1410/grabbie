@@ -30,91 +30,122 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [isValid, setIsValid] = useState(false);
-
+const [loading, setLoading] = useState(false);
   // Regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^[6-9]\d{9}$/;
-  const passwordRegex = /^\d{4}$/;
+  const passwordRegex = /^.{6,}$/;
 
   /* ================= VALIDATION FUNCTION ================= */
   const validateForm = () => {
-    const e = {}; // ✅ SINGLE SOURCE OF TRUTH
+  const e = {};
 
-    // ----- Common -----
-    if (!form.name.trim()) e.name = "Name is required";
+  // ----- Common -----
+  if (!form.name.trim()) e.name = "Name is required";
 
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!emailRegex.test(form.email))
-      e.email = "Enter a valid email address";
+  if (!form.email.trim()) e.email = "Email is required";
+  else if (!emailRegex.test(form.email))
+    e.email = "Enter a valid email address";
 
-    if (!form.password.trim()) e.password = "Password is required";
-    else if (!passwordRegex.test(form.password))
-      e.password = "Password must be exactly 4 digits";
+  if (!form.password.trim()) e.password = "Password is required";
+  else if (!passwordRegex.test(form.password))
+    e.password = "Password must be at least 6 characters";
 
-    if (!form.phone) e.phone = "Phone number is required";
-    else if (!phoneRegex.test(form.phone))
-      e.phone = "Enter valid 10 digit number";
+  if (!form.phone) e.phone = "Phone number is required";
+  else if (!phoneRegex.test(form.phone))
+    e.phone = "Enter valid 10 digit number";
 
-    // ----- Vendor -----
-    if (form.role === "vendor") {
-      if (!form.businessName.trim())
-        e.businessName = "Business name is required";
+  // ----- Vendor -----
+  if (form.role === "vendor") {
+    if (!form.businessName.trim())
+      e.businessName = "Business name is required";
 
-      if (!form.businessAddress.trim())
-        e.businessAddress = "Business address is required";
+    if (!form.businessAddress.trim())
+      e.businessAddress = "Business address is required";
 
-      if (!form.businessPhone || form.businessPhone.length !== 10)
-        e.businessPhone = "Business phone must be exactly 10 digits";
+    if (!form.businessPhone || form.businessPhone.length !== 10)
+      e.businessPhone = "Business phone must be exactly 10 digits";
 
-      if (!form.businessCategory.trim())
-        e.businessCategory = "Business category is required";
+    if (!form.businessCategory.trim())
+      e.businessCategory = "Business category is required";
+  }
 
-      if (!idProof)
-        e.idProof = "ID proof is required";
+  // ----- Driver -----
+  if (form.role === "driver") {
+    // Vehicle Number
+    if (!form.vehicleNumber.trim()) {
+      e.vehicleNumber = "Vehicle number is required";
+    } else if (
+      !/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/i.test(form.vehicleNumber)
+    ) {
+      e.vehicleNumber = "Enter a valid vehicle number (e.g. GJ01AB1234)";
     }
 
-    // ----- Driver -----
-    if (form.role === "driver") {
-
-  // Vehicle Number (min realistic check)
-  if (!form.vehicleNumber.trim()) {
-    e.vehicleNumber = "Vehicle number is required";
-  } 
-  else if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/i.test(form.vehicleNumber)) {
-    e.vehicleNumber = "Enter a valid vehicle number (e.g. GJ01AB1234)";
+    // License Number
+    if (!form.licenseNumber.trim()) {
+      e.licenseNumber = "License number is required";
+    } else if (!/^[A-Z0-9]{10,16}$/i.test(form.licenseNumber)) {
+      e.licenseNumber = "Enter a valid license number";
+    }
   }
 
-  // License Number (min length + alphanumeric)
-  if (!form.licenseNumber.trim()) {
-    e.licenseNumber = "License number is required";
-  } 
-  else if (!/^[A-Z0-9]{10,16}$/i.test(form.licenseNumber)) {
-    e.licenseNumber = "Enter a valid license number";
+  // ----- ID Proof (Vendor + Driver) -----
+  if (form.role === "vendor" || form.role === "driver") {
+    if (!idProof) {
+      e.idProof = "ID proof is required";
+    } else {
+      const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+
+      if (!allowedTypes.includes(idProof.type)) {
+        e.idProof = "Only JPG, PNG or PDF allowed";
+      }
+
+      if (idProof.size > 2 * 1024 * 1024) {
+        e.idProof = "File size must be less than 2MB";
+      }
+    }
   }
 
-  if (!idProof)
-    e.idProof = "ID proof is required";
-}
-    setErrors(e);
-    setIsValid(Object.keys(e).length === 0);
-  };
-
+  setErrors(e);
+  setIsValid(Object.keys(e).length === 0);
+};
   /* ================= LIVE VALIDATION ================= */
   useEffect(() => {
     validateForm();
     // eslint-disable-next-line
   }, [form, idProof]);
 
+
+useEffect(() => {
+  if (successMessage) {
+    const timer = setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }
+}, [successMessage]);
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  let { name, value } = e.target;
+
+  if (name === "name") {
+    value = value.replace(/\s+/g, " "); // remove extra spaces
+  }
+
+  setForm({ ...form, [name]: value });
+  setServerError("");
+};
 
   /* ================= SUBMIT ================= */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isValid) return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setServerError("");
+  if (!isValid || loading) return;
 
-    try {
+  setLoading(true);
+
+  try {
       const data = new FormData();
       Object.keys(form).forEach((key) => {
         if (form[key]) data.append(key, form[key]);
@@ -126,17 +157,17 @@ const RegisterPage = () => {
       if (profileImage) data.append("profileImage", profileImage);
       if (idProof) data.append("idProof", idProof);
 
-     await axios.post(`${API}/api/users/register`, data, {
+await axios.post(`${API}/api/users/register`, data, {
   headers: { "Content-Type": "multipart/form-data" },
 });
 
-
-
-      setSuccessMessage("Registration successful! Redirecting to login...");
+setLoading(false);
+setSuccessMessage("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
-      setServerError(err.response?.data?.message || "Registration failed");
-    }
+  setLoading(false);
+  setServerError(err.response?.data?.message || "Registration failed");
+}
   };
 
   return (
@@ -175,11 +206,11 @@ const RegisterPage = () => {
           {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
 
           {/* Email */}
-          <input name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+          <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full p-3 border rounded-lg" />
           {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
 
           {/* Password */}
-          <input type="password" name="password" placeholder="4-digit Password" value={form.password} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+          <input type="password" name="password" placeholder="Enter password (min 6 characters)" value={form.password} onChange={handleChange} className="w-full p-3 border rounded-lg" />
           {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
 
           {/* Phone */}
@@ -199,15 +230,38 @@ const RegisterPage = () => {
           {/* Profile Picture */}
           <div>
             <label className="text-sm font-medium">Profile Picture (Optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                setProfileImage(file);
-                setProfilePreview(file ? URL.createObjectURL(file) : null);
-              }}
-            />
+           <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files[0];
+setErrors((prev) => ({ ...prev, profileImage: "" }));
+    if (file) {
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        setErrors((prev) => ({
+          ...prev,
+          profileImage: "Only JPG or PNG allowed",
+        }));
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          profileImage: "Image must be less than 2MB",
+        }));
+        return;
+      }
+
+      setErrors((prev) => ({ ...prev, profileImage: "" }));
+      setProfileImage(file);
+      setProfilePreview(URL.createObjectURL(file));
+    }
+  }}
+/>
+{errors.profileImage && (
+  <p className="text-red-500 text-xs">{errors.profileImage}</p>
+)}
             {profilePreview && (
               <img src={profilePreview} alt="preview" className="w-20 h-20 rounded-full mt-2" />
             )}
@@ -232,7 +286,24 @@ const RegisterPage = () => {
               />
               {errors.businessPhone && <p className="text-red-500 text-xs">{errors.businessPhone}</p>}
 
-              <input name="businessCategory" placeholder="Business Category" value={form.businessCategory} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+             <select
+  name="businessCategory"
+  value={form.businessCategory}
+  onChange={handleChange}
+  className="w-full p-3 border rounded-lg"
+>
+  <option value="">Select Category</option>
+  <option value="vegetables">Vegetables</option>
+  <option value="fruits">Fruits</option>
+  <option value="dairy">Dairy</option>
+  <option value="groceries">Groceries</option>
+  <option value="bakery">Bakery</option>
+  <option value="beverages">Beverages</option>
+  <option value="snacks">Snacks</option>
+  <option value="electronics">Electronics</option>
+    <option value="clothes">Clothes</option>
+
+</select>
               {errors.businessCategory && <p className="text-red-500 text-xs">{errors.businessCategory}</p>}
             </>
           )}
@@ -277,9 +348,11 @@ const RegisterPage = () => {
     type="file"
     accept="image/*,.pdf"
     onChange={(e) => {
-      setIdProof(e.target.files[0]);
-      setErrors({ ...errors, idProof: "" });
-    }}
+  const file = e.target.files[0];
+
+  setIdProof(file);
+  setErrors((prev) => ({ ...prev, idProof: "" }));
+}}
     className="w-full p-2 border border-gray-300 rounded-lg"
   />
 
@@ -295,15 +368,15 @@ const RegisterPage = () => {
           )}
 
           <button
-            disabled={!isValid}
-            className={`w-full py-3 rounded-lg font-semibold ${
-              isValid
-                ? "bg-orange-500 text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            Register
-          </button>
+  disabled={!isValid || loading}
+  className={`w-full py-3 rounded-lg font-semibold ${
+    isValid && !loading
+      ? "bg-orange-500 text-white"
+      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+  }`}
+>
+  {loading ? "Registering..." : "Register"}
+</button>
         </form>
         <p className="text-center text-sm mt-4">
   Already have an account?{" "}

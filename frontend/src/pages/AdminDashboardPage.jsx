@@ -20,6 +20,8 @@ const API = process.env.REACT_APP_API_URL;
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [users, setUsers] = useState([]);
     const [drivers, setDrivers] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [orderFilter, setOrderFilter] = useState("all");
     const [pendingVendors, setPendingVendors] = useState([]);
     const [vendors, setVendors] = useState([]);
     const [notes, setNotes] = useState([]);
@@ -34,6 +36,8 @@ const API = process.env.REACT_APP_API_URL;
   const [approvedDrivers, setApprovedDrivers] = useState([]);
   const [rejectedDrivers, setRejectedDrivers] = useState([]);
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   // ---------- PAGINATION ----------
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,6 +86,17 @@ const API = process.env.REACT_APP_API_URL;
       const res = await axios.get(`${API}/api/users?role=customer`, { headers: authHeader() });
       setUsers(res.data || []);
     };
+const fetchOrders = async () => {
+  try {
+    const res = await axios.get(`${API}/api/orders`, {
+      headers: authHeader(),
+    });
+    setOrders(res.data || []);
+  } catch (err) {
+    console.error("Failed to fetch orders", err);
+  }
+};
+
   const fetchPendingDrivers = async () => {
     const res = await axios.get(`${API}/api/admin/pending-drivers`, { headers: authHeader() });
     setPendingDrivers(res.data || []);
@@ -136,7 +151,8 @@ const API = process.env.REACT_APP_API_URL;
 
         fetchPendingVendors(), 
         fetchAllVendors(), 
-        fetchNotifications()
+        fetchNotifications(),
+        fetchOrders()
       ]).finally(() => setLoading(false));
     }, []);
 
@@ -171,6 +187,22 @@ const API = process.env.REACT_APP_API_URL;
     }]
   }), [users.length, vendors.length, drivers.length]);
 
+  const platformRevenue = orders.reduce((sum, o) => {
+  const c = o.charges || {};
+  return sum + (c.platformFee || 0) + (c.serviceCharge || 0);
+}, 0);
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+const activeOrders = orders.filter(o =>
+  ["Placed", "Accepted", "Ready for Pickup", "Out for Delivery"].includes(o.status)
+).length;
+const filteredOrders =
+  orderFilter === "all"
+    ? orders
+    : orders.filter(o => o.status === orderFilter);
+const pendingOrders = orders.filter(o => o.status === "Placed").length;
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
         {sidebarOpen && (
@@ -181,65 +213,81 @@ onClick={() => setSidebarOpen(false)}
 )}
         {/* ---------- SIDEBAR ---------- */}
 <aside
-className={`
-fixed md:static z-40 top-[64px] left-0 h-[calc(100vh-64px)]
-bg-slate-900 text-gray-200
-transition-all duration-300
-${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-md:translate-x-0
-w-64
-overflow-y-auto
-`}
+  className={`
+    fixed top-0 left-0 h-full w-64
+    bg-gray-50 border-r border-gray-200
+    shadow-xl
+    flex flex-col   // ✅ IMPORTANT
+    transition-all duration-300
+    ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0
+    z-40
+  `}
 >
-         <div className="flex items-center justify-between mb-6 px-4 pt-4">
 
-<div className="flex items-center gap-3">
-<img
-src={admin?.profileImage || "https://via.placeholder.com/40"}
-alt="Admin"
-className="w-10 h-10 rounded-full border-2 border-orange-500 object-cover"
-/>
+  {/* 🔷 LOGO + ADMIN */}
+<div className="px-4 py-5 border-b border-gray-100">
 
-<span className="font-semibold text-white">
-Admin Panel
-</span>
-</div>
+  {/* PROFILE HEADER (REPLACES LOGO) */}
+  <div className="flex items-center gap-3">
+    <img
+      src={admin?.profileImage || "https://via.placeholder.com/40"}
+      className="w-11 h-11 rounded-full object-cover border"
+    />
 
-<button
-className="md:hidden text-gray-300"
-onClick={() => setSidebarOpen(false)}
->
-<X size={20}/>
-</button>
-</div>
-
-<div className="border-t border-slate-700 mt-4 pt-4">
-
-<SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} />
-
-<SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} />
-
-<SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} />
-
-<SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} />
-
-<SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} />
-
-<SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} />
-
-<SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} />
-
-<SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} />
-
-<SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} />
-
-<SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} />
+    <div>
+      <p className="text-sm font-semibold text-gray-800">
+        {admin?.name || "Admin"}
+      </p>
+      <p className="text-xs text-gray-500">Administrator</p>
+    </div>
+  </div>
 
 </div>
-        </aside>
+
+  {/* 🔷 MENU (KEEP YOUR EXISTING ITEMS SAME) */}
+  <div className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+
+    {/* ⚠️ DO NOT CHANGE BELOW MENU ITEMS */}
+    <SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} />
+
+    <SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} />
+
+    <SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} />
+
+    <SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} />
+
+    <SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} />
+
+    <SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} />
+
+    <SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} />
+
+    <SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} />
+
+    <SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} />
+
+    <SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} />
+<SidebarItem icon={<LayoutGrid />} label="Orders" active={active === "orders"} onClick={() => setActive("orders")} />
+  </div>
+
+  {/* 🔻 LOGOUT BUTTON */}
+  <div className="p-4 border-t border-gray-200">
+    <button
+      onClick={() => {
+        localStorage.clear();
+        window.location.href = "/login";
+      }}
+      className="w-full bg-red-500 text-white py-2 rounded-xl font-semibold hover:bg-red-600 transition"
+    >
+      Logout
+    </button>
+  </div>
+
+</aside>
 
         {/* ---------- MAIN CONTENT ---------- */}
-      <main className="flex-1 p-3 sm:p-4 md:p-8">
+    <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64">
 <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
 
 <button
@@ -255,6 +303,7 @@ onClick={() => setSidebarOpen(true)}
                     : active === "allVendors" ? "All Vendors"
                       : active === "drivers" ? "Delivery Partners"
                         : active === "categories" ? "Categories"
+                        : active === "orders" ? "Orders"
                           : "Notifications"}
             </h1>
 
@@ -271,26 +320,226 @@ onClick={() => setSidebarOpen(true)}
               )}
             </button>
           </div>
+{!loading && active === "orders" && (
+  <SectionCard title="All Orders">
+    {/* 🔥 ORDER STATS */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
+  <div className="bg-gradient-to-r from-orange-500 to-orange-400 text-white p-4 rounded-xl shadow">
+    <p className="text-sm opacity-80">Total Orders</p>
+    <p className="text-xl font-bold">{orders.length}</p>
+  </div>
+
+  <div className="bg-white p-4 rounded-xl shadow">
+    <p className="text-sm text-gray-500">Pending</p>
+    <p className="text-xl font-bold">
+      {orders.filter(o => o.status === "Placed").length}
+    </p>
+  </div>
+
+  <div className="bg-white p-4 rounded-xl shadow">
+    <p className="text-sm text-gray-500">Delivered</p>
+    <p className="text-xl font-bold text-green-600">
+      {orders.filter(o => o.status === "Delivered").length}
+    </p>
+  </div>
+
+</div>
+   <div className="mb-6 flex flex-wrap gap-2">
+
+  {["all","Placed","Out for Delivery","Delivered","Cancelled"].map(status => (
+    <button
+      key={status}
+      onClick={() => setOrderFilter(status)}
+      className={`px-4 py-2 rounded-full text-sm font-medium transition
+        ${orderFilter === status
+          ? "bg-orange-500 text-white shadow"
+          : "bg-gray-100 text-gray-600 hover:bg-orange-100"
+        }`}
+    >
+      {status}
+    </button>
+  ))}
+
+</div>
+
+    {filteredOrders.length === 0 ? (
+  <div className="text-center py-10 text-gray-500">
+    🚫 No orders for "{orderFilter}" status
+  </div>
+) : (
+      <>
+<table className="min-w-full bg-white rounded-xl overflow-hidden shadow-sm">          <thead className="bg-slate-100">
+            <tr>
+              <Th>Customer</Th>
+              <Th>Vendor</Th>
+              <Th>Driver</Th>
+              <Th>Amount</Th>
+              <Th>Status</Th>
+              <Th>Date</Th>
+              <Th>Action</Th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {paginate(filteredOrders).map(o => (
+              <tr key={o._id} className="border-t hover:bg-gray-50 transition">
+                
+                {/* CUSTOMER */}
+                <Td>
+                  {o.customerId?.name || "Customer"}
+                </Td>
+<Td>
+  {o.products[0]?.vendorSnapshot?.businessName || "Vendor"}
+</Td>
+
+<Td>
+  {o.assignedDriver?.name || "Not Assigned"}
+</Td>
+                {/* AMOUNT */}
+                <Td>
+                 ₹{o.totalAmount?.toLocaleString()}
+                </Td>
+
+                {/* STATUS */}
+                <Td>
+                  <span className={`px-2 py-0.5 text-xs rounded
+                    ${o.status === "Delivered" ? "bg-green-100 text-green-700"
+                      : o.status === "Cancelled" ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-800"}
+                  `}>
+                    {o.status}
+                  </span>
+                </Td>
+
+                {/* DATE */}
+                <Td>
+                  {new Date(o.createdAt).toLocaleDateString()}
+                </Td>
+<Td>
+  <button
+    onClick={() => setSelectedOrder(o)}
+    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-sm"
+  >
+    View
+  </button>
+</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {selectedOrder && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-xl w-[500px] relative">
+
+      <button
+        onClick={() => setSelectedOrder(null)}
+        className="absolute top-2 right-3"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-xl font-bold mb-4">Order Details</h2>
+<p><b>Order Date:</b> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+      <p><b>Customer:</b> {selectedOrder.customerId?.name}</p>
+      <p><b>Amount:</b> ₹{selectedOrder.totalAmount}</p>
+      <p><b>Status:</b> {selectedOrder.status}</p>
+
+      <div className="mt-3">
+        <b>Products:</b>
+        {selectedOrder.products.map((p, i) => (
+          <div key={i}>
+            {p.productId?.name} × {p.quantity}
+          </div>
+        ))}
+      </div>
+
+    </div>
+  </div>
+)}
+
+        <Pagination
+          totalItems={filteredOrders.length}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+      </>
+    )}
+  </SectionCard>
+)}
           {loading && <div className="bg-white rounded-xl shadow p-6">Loading...</div>}
 
           {/* ---------- DASHBOARD ---------- */}
           {!loading && active === "dashboard" && (
             <div className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-                <StatCard title="Total Customers" value={users.length} color="from-blue-500 to-blue-400" />
-                <StatCard title="Total Vendors" value={vendors.length} color="from-purple-500 to-purple-400" />
-                <StatCard title="Delivery Partners" value={drivers.length} color="from-green-500 to-green-400" />
-              </div><br></br>
-<div className="bg-white rounded-xl shadow p-4 sm:p-6 w-full max-w-2xl mx-auto h-80 sm:h-96 flex items-center justify-center">    <Doughnut 
+              {/* 🔥 BUSINESS STATS */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  <StatCard title="Total Orders" value={orders.length} color="from-orange-500 to-orange-400" />
+  <StatCard title="Revenue" value={`₹${totalRevenue.toFixed(2)}`} color="from-pink-500 to-pink-400" />
+  <StatCard title="Platform Revenue" value={`₹${platformRevenue.toFixed(2)}`} color="from-indigo-500 to-indigo-400" />
+</div>
+
+{/* 👥 USERS */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  <StatCard title="Customers" value={users.length} color="from-blue-500 to-blue-400" />
+  <StatCard title="Vendors" value={vendors.length} color="from-purple-500 to-purple-400" />
+  <StatCard title="Drivers" value={drivers.length} color="from-green-500 to-green-400" />
+</div>
+
+{/* 🚚 ORDER STATUS */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+  <StatCard title="Active Orders" value={activeOrders} color="from-yellow-500 to-yellow-400" />
+  <StatCard title="Pending Orders" value={pendingOrders} color="from-red-500 to-red-400" />
+</div>
+             <br></br>
+ <SectionCard title="Recent Orders">
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-left text-gray-500 border-b">
+          <th className="py-2">Customer</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {orders.slice(0, 5).map(o => (
+          <tr key={o._id} className="border-b hover:bg-gray-50">
+            <td className="py-2">{o.customerId?.name || "Customer"}</td>
+            <td>₹{o.totalAmount}</td>
+
+            <td>
+              <span className={`px-2 py-1 text-xs rounded
+                ${o.status === "Delivered"
+                  ? "bg-green-100 text-green-700"
+                  : o.status === "Cancelled"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-yellow-100 text-yellow-800"}
+              `}>
+                {o.status}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</SectionCard>
+
+<div className="bg-white rounded-2xl shadow-lg p-6">
+
+  <div className="h-72">
+    <Doughnut 
       data={chartData} 
       options={{ 
-        responsive: true, 
-        maintainAspectRatio: false, 
-        cutout: '70%' 
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "70%"
       }} 
     />
   </div>
+</div>
 
             </div>
           )}
@@ -298,15 +547,20 @@ onClick={() => setSidebarOpen(true)}
           {/* ---------- CUSTOMERS ---------- */}
           {!loading && active === "users" && (
             <SectionCard title="Customers">
-              <input
-  type="text"
-  placeholder="Search customers..."
-  value={customerSearch}
-  onChange={(e) => setCustomerSearch(e.target.value)}
-  className="border px-3 py-2 rounded mb-4 w-full"
-/>
+              <div className="relative mb-5">
+  <input
+    type="text"
+    placeholder="🔍 Search by name, email, phone..."
+    value={customerSearch}
+    onChange={(e) => setCustomerSearch(e.target.value)}
+    className="w-full border border-gray-200 px-4 py-3 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-400 outline-none"
+  />
+</div>{/* 🔥 CUSTOMER STATS */}
+
+
+
   <SimpleTable
-  columns={["Customer", "Email", "Phone"]}
+  columns={["Customer", "Email", "Phone", "Action"]}
   rows={paginate(
     users.filter(u =>
       u.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -314,17 +568,29 @@ onClick={() => setSidebarOpen(true)}
       (u.phone || "").toLowerCase().includes(customerSearch.toLowerCase())
     )
   ).map(u => [
-    <div className="flex items-center gap-3">
-      <img
-        src={u.profileImage || "https://via.placeholder.com/40"}
-        alt="customer"
-        className="w-8 h-8 rounded-full object-cover"
-      />
-      {u.name}
-    </div>,
-    u.email,
-    u.phone || "-"
-  ])}
+  <div className="flex items-center gap-3">
+    <img
+      src={u.profileImage || "https://via.placeholder.com/40"}
+      alt="customer"
+      className="w-10 h-10 rounded-full object-cover border"
+    />
+    <div>
+      <p className="font-medium">{u.name}</p>
+      <p className="text-xs text-gray-400">Customer</p>
+    </div>
+  </div>,
+
+  <span className="text-gray-600">{u.email}</span>,
+
+  <span>{u.phone || "-"}</span>,
+
+  <button
+    onClick={() => setSelectedCustomer(u)}
+    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-sm"
+  >
+    View
+  </button>
+])}
 />
 
   <Pagination
@@ -332,6 +598,38 @@ onClick={() => setSidebarOpen(true)}
     currentPage={currentPage}
     setCurrentPage={setCurrentPage}
   />
+  {/* 👁️ CUSTOMER DETAILS MODAL */}
+{selectedCustomer && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-xl w-[450px] relative">
+
+      <button
+        onClick={() => setSelectedCustomer(null)}
+        className="absolute top-2 right-3 text-gray-500"
+      >
+        ✕
+      </button>
+
+      <div className="flex items-center gap-4 mb-4">
+        <img
+          src={selectedCustomer.profileImage || "https://via.placeholder.com/80"}
+          className="w-16 h-16 rounded-full object-cover"
+        />
+        <div>
+          <h2 className="text-lg font-bold">{selectedCustomer.name}</h2>
+          <p className="text-sm text-gray-500">Customer</p>
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        <p><b>Email:</b> {selectedCustomer.email}</p>
+        <p><b>Phone:</b> {selectedCustomer.phone || "-"}</p>
+        <p><b>User ID:</b> {selectedCustomer._id}</p>
+      </div>
+
+    </div>
+  </div>
+)}
   
             </SectionCard>
           )}
@@ -341,49 +639,37 @@ onClick={() => setSidebarOpen(true)}
     <div className="text-slate-600">No pending drivers.</div>
   ) : (
     <>
-      <table className="min-w-full bg-white rounded-lg overflow-hidden">
-        <thead className="bg-slate-100">
-          <tr>
-           <Th>User</Th><Th>Email</Th><Th>Vehicle</Th><Th>Status</Th><Th>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginate(pendingDrivers).map(d => (
-            <tr key={d._id} className="border-t">
-             <Td>
-<div className="flex items-center gap-3">
-  <img
-    src={d.profileImage || "https://via.placeholder.com/40"}
-    alt="user"
-    className="w-8 h-8 rounded-full object-cover"
-  />
-  {d.name}
-</div>
-</Td>
-              <Td>{d.email}</Td>
-              <Td>{d.vehicleNumber || "-"}</Td>
-              <Td>
-               <span className={`px-2 py-0.5 text-xs rounded
-${d.driverStatus === "approved" ? "bg-green-100 text-green-700"
-: d.driverStatus === "rejected" ? "bg-red-100 text-red-700"
-: "bg-yellow-100 text-yellow-800"}`}>
-  {d.driverStatus}
-</span>
-              </Td>
-            <Td className="flex gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-<button
-  onClick={() => setSelectedDriver(d)}
-  className="bg-blue-600 text-white px-3 py-1.5 rounded"
->
-View
-</button>
+    {paginate(pendingDrivers).map(d => (
+      <div key={d._id} className="bg-white rounded-2xl shadow p-5">
 
-</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div className="flex items-center gap-3 mb-3">
+          <img src={d.profileImage || "https://via.placeholder.com/50"} className="w-12 h-12 rounded-full" />
+          <div>
+            <p className="font-semibold">{d.name}</p>
+            <p className="text-xs text-gray-500">{d.email}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600">
+          Vehicle: {d.vehicleNumber || "-"}
+        </p>
+
+        <div className="flex gap-2 mt-4">
+          <button onClick={() => approveDriver(d._id)} className="flex-1 bg-green-500 text-white py-2 rounded-lg">
+            Approve
+          </button>
+
+          <button onClick={() => rejectDriver(d._id)} className="flex-1 bg-red-500 text-white py-2 rounded-lg">
+            Reject
+          </button>
+        </div>
+
+      </div>
+    ))}
+
+  </div>
 
       <Pagination
         totalItems={pendingDrivers.length}
@@ -404,58 +690,58 @@ View
     <div className="text-slate-600">No pending vendors.</div>
   ) : (
     <>
-      <table className="min-w-full bg-white rounded-lg overflow-hidden">
-        <thead className="bg-slate-100">
-          <tr>
-            <Th>Vendor</Th><Th>Email</Th><Th>Business</Th><Th>Status</Th><Th>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginate(pendingVendors).map(v => (
-            <tr key={v._id} className="border-t">
-             <Td>
-  <div className="flex items-center gap-3">
-    <img
-      src={v.profileImage || "https://via.placeholder.com/40"}
-      alt="vendor"
-      className="w-8 h-8 rounded-full object-cover"
-    />
-    {v.name}
+     {/* 🔥 STATS */}
+  <div className="grid grid-cols-3 gap-4 mb-6">
+    <div className="bg-orange-500 text-white p-4 rounded-xl">
+      <p className="text-sm">Pending</p>
+      <p className="text-xl font-bold">{pendingVendors.length}</p>
+    </div>
+
+    <div className="bg-green-100 p-4 rounded-xl">
+      <p className="text-sm text-gray-500">Approved</p>
+      <p className="text-xl font-bold">{approvedVendors.length}</p>
+    </div>
+
+    <div className="bg-red-100 p-4 rounded-xl">
+      <p className="text-sm text-gray-500">Rejected</p>
+      <p className="text-xl font-bold">{rejectedVendors.length}</p>
+    </div>
   </div>
-</Td>
-              <Td>{v.email}</Td>
-              <Td>{v.businessName || "-"}</Td>
-              <Td>
-                <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">
-                  {v.vendorStatus}
-                </span>
-              </Td>
-              <Td className="flex gap-2">
-  <button
-    onClick={() => setSelectedVendor(v)}
-    className="bg-blue-600 text-white px-3 py-1.5 rounded"
-  >
-    View
-  </button>
 
-  {/* <button
-    onClick={() => approveVendor(v._id)}
-    className="bg-emerald-600 text-white px-3 py-1.5 rounded"
-  >
-    Approve
-  </button>
+  {/* 🔥 CARDS */}
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {paginate(pendingVendors).map(v => (
+      <div key={v._id} className="bg-white rounded-2xl shadow p-5">
 
-  <button
-    onClick={() => rejectVendor(v._id)}
-    className="bg-red-600 text-white px-3 py-1.5 rounded"
-  >
-    Reject
-  </button> */}
-</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div className="flex items-center gap-3 mb-4">
+          <img src={v.profileImage || "https://via.placeholder.com/50"} className="w-12 h-12 rounded-full" />
+          <div>
+            <p className="font-semibold">{v.name}</p>
+            <p className="text-xs text-gray-500">{v.email}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600">
+          {v.businessName} • {v.businessCategory}
+        </p>
+
+        <div className="flex gap-2 mt-4">
+          <button onClick={() => approveVendor(v._id)} className="flex-1 bg-green-500 text-white py-2 rounded-lg">
+            Approve
+          </button>
+
+          <button onClick={() => rejectVendor(v._id)} className="flex-1 bg-red-500 text-white py-2 rounded-lg">
+            Reject
+          </button>
+
+          <button onClick={() => setSelectedVendor(v)} className="bg-orange-500 text-white px-3 rounded-lg">
+            View
+          </button>
+        </div>
+
+      </div>
+    ))}
+  </div>
 
       <Pagination
         totalItems={pendingVendors.length}
@@ -486,6 +772,8 @@ View
           {/* ---------- CATEGORIES ---------- */}
           {!loading && active === "categories" && (
             <SectionCard title="Manage Categories">
+
+              
               <AddCategoryForm onCategoryAdded={fetchCategories} />
 <CategoryTable
   categories={paginate(categories)}
@@ -779,23 +1067,40 @@ rows={rejectedVendors.map(v => [
 
   // ---------- COMPONENTS ----------
 const SidebarItem = ({ icon, label, active, onClick }) => (
-<button
-onClick={onClick}
-className={`flex items-center gap-3 w-full px-4 py-3 md:py-3.5 rounded-lg text-sm transition-all
-  ${active ? "bg-orange-500 text-white" : "text-gray-300 hover:bg-gray-800"}
-`}
->
-<span className="w-5 h-5">{icon}</span>
-<span>{label}</span>
-</button>
-);
+  <button
+    onClick={onClick}
+    className={`
+      w-full flex items-center gap-3 px-4 py-2.5 rounded-xl
+      text-sm font-medium transition-all duration-200 group
 
-  const StatCard = ({ title, value, color }) => (
-<div className={`bg-gradient-to-r ${color} text-white p-4 sm:p-5 rounded-xl shadow flex flex-col`}> 
-       <div className="text-sm">{title}</div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
+      ${active
+        ? "bg-orange-50 text-orange-600"
+        : "text-gray-600 hover:bg-gray-50 hover:text-orange-500"
+      }
+    `}
+  >
+    {/* ICON */}
+    <div className={`
+      transition-all
+      ${active ? "text-orange-600" : "text-gray-400 group-hover:text-orange-500"}
+    `}>
+      {React.cloneElement(icon, { size: 18 })}
     </div>
-  );
+
+    {/* TEXT */}
+    <span>{label}</span>
+  </button>
+);
+ const StatCard = ({ title, value, color }) => (
+  <div className={`relative overflow-hidden bg-gradient-to-r ${color} text-white p-5 rounded-2xl shadow-lg hover:scale-[1.02] transition-all duration-300`}>
+    
+    {/* Glow effect */}
+    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
+
+    <div className="text-sm opacity-80">{title}</div>
+    <div className="text-2xl font-bold mt-1">{value}</div>
+  </div>
+);
 
   const SectionCard = ({ title, children }) => (
     <div className="bg-white rounded-xl shadow p-6 mb-6">
@@ -842,7 +1147,7 @@ className={`flex items-center gap-3 w-full px-4 py-3 md:py-3.5 rounded-lg text-s
             onClick={() => setCurrentPage(i + 1)}
             className={`px-3 py-1 border rounded ${
               currentPage === i + 1
-                ? "bg-slate-900 text-white"
+                ? "bg-white border-b border-gray-200"
                 : "hover:bg-slate-100"
             }`}
           >
@@ -920,8 +1225,11 @@ onCategoryAdded();
     return (
       <form onSubmit={handleSubmit} className="flex gap-3 mb-4">
         <input type="text" placeholder="Category Name" value={name} onChange={(e) => setName(e.target.value)} className="border px-3 py-2 rounded flex-1" />
-        <input type="file" onChange={(e) => setImage(e.target.files[0])} className="border px-3 py-2 rounded" />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{loading ? "Adding..." : "Add"}</button>
+        <input type="file" onChange={(e) => setImage(e.target.files[0])} className="border border-gray-200 px-3 py-2 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none" />
+       <button
+  type="submit"
+  className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl shadow transition"
+>{loading ? "Adding..." : "Add"}</button>
       </form>
     );
   };
@@ -1010,7 +1318,7 @@ onCategoryAdded();
       <div>
         {editingCategory && (
           <div className="p-4 bg-yellow-50 rounded mb-4 flex flex-col gap-2">
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} className="border px-3 py-2 rounded" />
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} className="border border-gray-200 px-3 py-2 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none" />
             <input type="file" onChange={(e) => setNewImage(e.target.files[0])} />
             <div className="flex gap-2">
               <button onClick={handleUpdate} className="bg-green-600 text-white px-3 py-1 rounded">{loading ? "Updating..." : "Update"}</button>

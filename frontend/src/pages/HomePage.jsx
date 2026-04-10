@@ -8,7 +8,7 @@ const API = process.env.REACT_APP_API_URL;
 const HomePage = () => {
   const [categories, setCategories] = useState([]);
   
-
+const [ratings, setRatings] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
@@ -161,7 +161,33 @@ useEffect(() => {
     .catch(err => console.error("Products error", err));
 }, []);
 
+useEffect(() => {
+  const fetchRatings = async () => {
+    try {
+      const ratingPromises = homeProducts.map((p) =>
+        axios.get(`${API}/api/orders/product/${p._id}/ratings-summary`)
+          .then(res => ({ id: p._id, data: res.data }))
+          .catch(() => ({ id: p._id, data: null }))
+      );
 
+      const results = await Promise.all(ratingPromises);
+
+      const ratingMap = {};
+      results.forEach(r => {
+        if (r.data) ratingMap[r.id] = r.data;
+      });
+
+      setRatings(ratingMap);
+
+    } catch (err) {
+      console.error("Ratings error", err);
+    }
+  };
+
+  if (homeProducts.length > 0) {
+    fetchRatings();
+  }
+}, [homeProducts]);
   // =============================
   // Highlight matched text
   // =============================
@@ -375,6 +401,19 @@ useEffect(() => {
             <h3 className="text-lg font-semibold mb-2">
               {highlightText(product.name)}
             </h3>
+   {ratings[product._id]?.totalReviews > 0 ? (
+  <div className="flex items-center gap-1 mb-2 text-yellow-500 text-sm">
+    {[1,2,3,4,5].map(star => (
+      <span key={star}>
+        {star <= Math.round(ratings[product._id].avgRating) ? "★" : "☆"}
+      </span>
+    ))}
+  </div>
+) : (
+  <span className="text-xs text-gray-400 mb-2">
+  No reviews yet
+  </span>
+)}
 
             <span className="text-xs bg-gray-100 px-2 py-1 rounded mb-3 w-fit capitalize">
               {highlightText(product.category)}

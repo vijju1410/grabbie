@@ -44,7 +44,20 @@ const userSchema = new mongoose.Schema(
     businessName: { type: String },
     businessAddress: { type: String },
     businessPhone: { type: String },
-    businessCategory: { type: String },
+    businessCategory: {
+  type: String,
+  enum: [
+    "vegetables",
+    "fruits",
+    "dairy",
+    "groceries",
+    "bakery",
+    "beverages",
+    "snacks",
+    "electronics",
+    "clothes"
+  ],
+},
 
     vendorApproved: { type: Boolean, default: false },
     vendorStatus: {
@@ -65,10 +78,21 @@ const userSchema = new mongoose.Schema(
     vehicleNumber: { type: String },
     idProof: { type: String },
     driverLocation: {
+     
   lat: { type: Number },
   lng: { type: Number },
   updatedAt: { type: Date }
 },
+ isAvailable: {
+  type: Boolean,
+  default: false,
+},
+otp: String,
+otpExpiry: Date,
+// 🔐 Forgot Password Fields
+resetPasswordToken: { type: String },
+resetPasswordExpire: { type: Date },
+
   },
   { timestamps: true }
   

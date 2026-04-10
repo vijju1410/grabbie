@@ -1,6 +1,8 @@
 // backend/routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('../models/user');
 const Notification = require('../models/notification');
 const bcrypt = require('bcryptjs');
@@ -247,6 +249,77 @@ if (user.role === 'vendor') {
   }
 });
 
+
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    // 👉 Find user by phone
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 👉 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 👉 Save OTP
+    user.otp = otp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000;
+    await user.save();
+
+    // 👉 Email transporter (same as forgot password)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // ✅ SEND EMAIL
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Your OTP - Grabbie',
+      html: `
+        <h2>Grabbie Login OTP</h2>
+        <p>Your OTP is:</p>
+        <h1>${otp}</h1>
+        <p>This OTP will expire in 5 minutes.</p>
+      `,
+    });
+
+    res.json({ message: 'OTP sent to your email' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to send OTP' });
+  }
+});
+
+
+router.post('/verify-otp', async (req, res) => {
+  const { phone, otp } = req.body;
+
+  const user = await User.findOne({ phone });
+
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  if (user.otp !== otp)
+    return res.status(400).json({ message: 'Invalid OTP' });
+
+  if (user.otpExpiry < Date.now())
+    return res.status(400).json({ message: 'OTP expired' });
+
+  const token = jwt.sign(
+    { userId: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '1d' }
+  );
+
+  res.json({ token, user });
+});
 // ===== Google Login =====
 router.post('/google-login', async (req, res) => {
   try {
@@ -673,6 +746,127 @@ router.get("/driver/location/:driverId", protect, async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch driver location" });
+  }
+});
+
+// ✅ DRIVER AVAILABILITY TOGGLE
+router.put("/availability", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "driver") {
+      return res.status(403).json({ message: "Only drivers can update availability" });
+    }
+
+    const { availability } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.isAvailable = availability;
+    await user.save();
+
+    res.json({
+      message: "Availability updated",
+      isAvailable: user.isAvailable,
+    });
+
+  } catch (err) {
+    console.error("Availability error:", err);
+    res.status(500).json({ message: "Failed to update availability" });
+  }
+});
+
+// ===== FORGOT PASSWORD =====
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash token & save
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 min
+
+    await user.save();
+
+    // Reset URL (frontend)
+    const resetURL = `http://localhost:3000/reset-password/${resetToken}`;
+
+    // Email transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Send email
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Password Reset - Grabbie',
+      html: `
+        <h3>Password Reset Request</h3>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetURL}" target="_blank">${resetURL}</a>
+        <p>This link will expire in 10 minutes.</p>
+      `,
+    });
+
+    res.json({ message: 'Password reset email sent successfully' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error sending email' });
+  }
+});
+// ===== RESET PASSWORD =====
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const bcrypt = require('bcryptjs');
+
+    // Hash token from URL
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Update password
+    const newPassword = await bcrypt.hash(req.body.password, 10);
+    user.password = newPassword;
+
+    // Clear reset fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Password reset failed' });
   }
 });
 module.exports = router;

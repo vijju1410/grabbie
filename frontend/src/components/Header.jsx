@@ -128,20 +128,40 @@ useEffect(() => {
                       Categories
                     </button>
                     {categoryOpen && (
-                      <div className="absolute bg-white shadow-lg rounded-lg mt-2 z-50">
-                        {categories.map((c) => (
-                          <Link
-                            key={c._id}
-                            to={`/category/${c.name}`}
-                            className="block px-4 py-2 hover:bg-gray-100"
-                            onClick={() => setCategoryOpen(false)}
-                          >
-                            {c.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+  <div className="absolute bg-white shadow-xl rounded-xl mt-3 z-50 w-56 p-2">
+    {categories.map((c) => (
+      <Link
+        key={c._id}
+        to={`/category/${encodeURIComponent(c.name)}`}
+        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+        onClick={() => setCategoryOpen(false)}
+      >
+        <img
+          src={c.image}
+          alt={c.name}
+          className="w-6 h-6 rounded-full object-cover"
+        />
+        <span className="text-sm font-medium">{c.name}</span>
+      </Link>
+    ))}
+
+    <Link
+      to="/categories"
+      className="block text-center text-orange-600 text-sm mt-2 hover:underline"
+      onClick={() => setCategoryOpen(false)}
+    >
+      View All →
+    </Link>
+  </div>
+)}
                   </div>
+<Link
+  to="/offers"
+  className={isActive("/offers") ? "text-orange-600" : "text-gray-700 hover:text-orange-600"}
+>
+  Deals
+</Link>
+
 {/* Inside Desktop Menu (customer visible section) */}
 <Link
   to="/about"
@@ -249,7 +269,9 @@ useEffect(() => {
                     ))}
                   </div>
                 )}
-
+<Link to="/offers" onClick={() => setMenuOpen(false)}>
+  Deals
+</Link>
                 <Link to="/about" onClick={() => setMenuOpen(false)}>
                   About Us
                 </Link>

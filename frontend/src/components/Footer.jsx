@@ -11,11 +11,14 @@ import {
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-<div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+    <footer className="bg-gray-900 text-white mt-10">
+      {/* Top Divider */}
+      <div className="border-t border-gray-800"></div>
 
-          {/* Brand Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          {/* ================= BRAND ================= */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -24,17 +27,18 @@ const Footer = () => {
               <span className="text-2xl font-bold">Grabbie</span>
             </div>
 
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-400 text-sm leading-relaxed mb-4">
               Grab local deals, delivered quick. Your favorite local stores and
               vendors, right at your doorstep.
             </p>
 
+            {/* Social Icons */}
             <div className="flex space-x-4">
               <a
                 href="https://www.facebook.com/vijju.prajapati.90"
                 target="_blank"
                 rel="noreferrer"
-                className="text-gray-400 hover:text-orange-500"
+                className="text-gray-400 hover:text-orange-500 transform hover:scale-110 transition duration-200"
               >
                 <Facebook />
               </a>
@@ -43,7 +47,7 @@ const Footer = () => {
                 href="https://www.instagram.com/vijju_1410"
                 target="_blank"
                 rel="noreferrer"
-                className="text-gray-400 hover:text-orange-500"
+                className="text-gray-400 hover:text-orange-500 transform hover:scale-110 transition duration-200"
               >
                 <Instagram />
               </a>
@@ -52,60 +56,74 @@ const Footer = () => {
                 href="https://github.com/vijju1410"
                 target="_blank"
                 rel="noreferrer"
-                className="text-gray-400 hover:text-orange-500"
+                className="text-gray-400 hover:text-orange-500 transform hover:scale-110 transition duration-200"
               >
                 <Github />
               </a>
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* ================= QUICK LINKS ================= */}
           <div className="md:text-center">
-  <h3 className="text-lg font-semibold mb-4">Quick Links For Easy Access</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Quick Links
+            </h3>
 
-  <ul className="space-y-2 inline-block text-left">
-    <li>
-      <Link to="/" className="text-gray-400 hover:text-white">
-        Home
-      </Link>
-    </li>
+            <ul className="space-y-2 inline-block text-left text-sm">
+              <li>
+                <Link
+                  to="/"
+                  className="text-gray-400 hover:text-white hover:underline"
+                >
+                  Home
+                </Link>
+              </li>
 
-    <li>
-      <Link to="/cart" className="text-gray-400 hover:text-white">
-        Cart
-      </Link>
-    </li>
+              <li>
+                <Link
+                  to="/cart"
+                  className="text-gray-400 hover:text-white hover:underline"
+                >
+                  Cart
+                </Link>
+              </li>
 
-    <li>
-      <Link to="/orders" className="text-gray-400 hover:text-white">
-        My Orders
-      </Link>
-    </li>
+              <li>
+                <Link
+                  to="/orders"
+                  className="text-gray-400 hover:text-white hover:underline"
+                >
+                  My Orders
+                </Link>
+              </li>
 
-    <li>
-      <Link to="/register" className="text-gray-400 hover:text-white">
-        Become a Vendor
-      </Link>
-    </li>
-  </ul>
-</div>
+              <li>
+                <Link
+                  to="/register"
+                  className="text-gray-400 hover:text-white hover:underline"
+                >
+                  Become a Vendor
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-
-          {/* Contact Info */}
+          {/* ================= CONTACT ================= */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us </h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Contact Us
+            </h3>
 
-            <div className="space-y-3">
+            <div className="space-y-3 text-sm">
               <a
-  href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayprajapati1410@gmail.com&su=Support%20Request&body=Hello%20Grabbie%20Team"
-  target="_blank"
-  rel="noreferrer"
-  className="flex items-center space-x-3 text-gray-400 hover:text-white"
->
-  <Mail className="w-4 h-4 text-orange-500" />
-  <span>Email Us</span>
-</a>
-
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayprajapati1410@gmail.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-3 text-gray-400 hover:text-white"
+              >
+                <Mail className="w-4 h-4 text-orange-500" />
+                <span>Email Us</span>
+              </a>
 
               <a
                 href="tel:+917490983889"
@@ -123,9 +141,9 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom */}
+        {/* ================= BOTTOM ================= */}
         <div className="border-t border-gray-800 mt-8 pt-6 text-center">
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm">
             © {new Date().getFullYear()} Grabbie. All rights reserved.
           </p>
         </div>

@@ -70,9 +70,9 @@ useEffect(() => {
   useEffect(() => {
     const fetchRating = async () => {
       try {
-        const res = await axios.get(
-          `${API}/api/products/${id}/ratings-summary`
-        );
+       const res = await axios.get(
+  `${API}/api/orders/product/${id}/ratings-summary`
+);
         setRating(res.data);
       } catch {
         // ignore if no ratings yet
@@ -149,6 +149,14 @@ const isInCart = cart.some(
   (item) => item.productId?._id === product._id
 );
 
+const getFinalPrice = () => {
+  if (!offer) return product.price;
+
+  return offer.discountType === "percent"
+    ? product.price - (product.price * offer.discountValue) / 100
+    : product.price - offer.discountValue;
+};
+
   return (
     <div className="max-w-5xl mx-auto p-6 grid md:grid-cols-2 gap-8">
       <Toaster position="top-center" />
@@ -156,7 +164,8 @@ const isInCart = cart.some(
       {/* Product Image */}
       <div className="flex justify-center items-center">
         <img
-          src={product.image}
+  src={product.image}
+  onError={(e) => (e.target.src = "/placeholder.png")}
           alt={product.name}
           className="rounded-2xl shadow-lg max-h-[400px] object-contain"
         />
@@ -167,16 +176,21 @@ const isInCart = cart.some(
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
 
         {/* ⭐ Rating */}
-        {rating && rating.totalReviews > 0 && (
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-yellow-500 text-lg">
-              ⭐ {rating.avgRating}
-            </span>
-            <span className="text-sm text-gray-500">
-              ({rating.totalReviews} reviews)
-            </span>
-          </div>
-        )}
+       {rating && rating.totalReviews > 0 && (
+  <div className="flex items-center gap-1 mb-3">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <span key={star}>
+        {star <= Math.round(rating.avgRating) ? "⭐" : "☆"}
+      </span>
+    ))}
+    <span className="text-yellow-500 font-semibold ml-2">
+  {Number(rating.avgRating || 0).toFixed(1)} ★
+</span>
+<span className="text-sm text-gray-500 ml-2">
+  ({rating.totalReviews} reviews)
+</span>
+  </div>
+)}
 
         <p className="text-gray-600 mb-4">{product.description}</p>
 
@@ -194,11 +208,18 @@ const isInCart = cart.some(
       }
     </p>
 
-    <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded">
-      {offer.discountType === "percent"
-        ? `${offer.discountValue}% OFF`
-        : `₹${offer.discountValue} OFF`}
-    </span>
+    <span className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded mr-2">
+  {offer.discountType === "percent"
+    ? `${offer.discountValue}% OFF`
+    : `₹${offer.discountValue} OFF`}
+</span>
+
+<span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
+  Save ₹
+  {offer.discountType === "percent"
+    ? ((product.price * offer.discountValue) / 100).toFixed(0)
+    : offer.discountValue}
+</span>
   </div>
 ) : (
   <p className="text-2xl font-semibold text-green-600 mb-2">
@@ -209,6 +230,9 @@ const isInCart = cart.some(
         <p className="text-sm text-gray-500 mb-2">
           Category: {product.category}
         </p>
+        <p className="text-sm text-gray-600 mb-2">
+  🚚 Delivery in 30-45 mins
+</p>
 <p className="text-sm mb-3">
   {product.stock > 0 ? (
     product.stock <= 5 ? (
@@ -248,7 +272,7 @@ onClick={() => {
   setQuantity((q) => q + 1);
 }}
     className={`px-3 py-1 rounded ${
-      quantity >= 10
+    quantity >= product.stock
         ? "bg-gray-200 cursor-not-allowed opacity-50"
         : "bg-gray-300"
     }`}
@@ -257,8 +281,17 @@ onClick={() => {
   </button>
 </div>
 
+<p className="text-lg font-semibold mb-3">
+  Total: ₹{(getFinalPrice() * quantity).toFixed(2)}
+</p>
+
         {/* Actions */}
         <div className="flex gap-4">
+          {isInCart && (
+  <p className="text-green-600 text-sm mt-2">
+    ✔ Already in cart
+  </p>
+)}
   {isInCart ? (
     <button
       onClick={() => navigate("/cart")}

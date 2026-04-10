@@ -162,14 +162,18 @@ if (io) {
       products: enrichedItems,
       totalAmount: Number(totalAmount),
       charges: {
-        itemsTotal: Number(charges.itemsTotal || 0),
-        serviceCharge: Number(charges.serviceCharge || 0),
-        gst: Number(charges.gst || 0),
-        platformFee: Number(charges.platformFee || 0),
-        deliveryCharge: Number(charges.deliveryCharge || 0),
-        tip: Number(charges.tip || 0),
-        grandTotal: Number(charges.grandTotal || totalAmount),
-      },
+  itemsTotal: Number(charges.itemsTotal || 0),
+  serviceCharge: Number(charges.serviceCharge || 0),
+  gst: Number(charges.gst || 0),
+  platformFee: Number(charges.platformFee || 0),
+
+  deliveryCharge: Number(charges.deliveryCharge || 0), // customer pays
+
+  driverEarning: Math.round((charges.deliveryCharge || 0) * 0.7), // 👈 NEW (70% to driver)
+
+  tip: Number(charges.tip || 0),
+  grandTotal: Number(charges.grandTotal || totalAmount),
+},
       deliveryDetails,
       paymentMethod,
       status: "Placed",
@@ -258,9 +262,9 @@ router.get("/driver/stats", protect, async (req, res) => {
     const totalDeliveries = deliveredOrders.length;
 
     const totalEarnings = deliveredOrders.reduce(
-      (sum, order) => sum + (order.charges?.deliveryCharge || 0),
-      0
-    );
+  (sum, order) => sum + (order.charges?.driverEarning || 0),
+  0
+);
 
     const averageRating =
       deliveredOrders.length > 0
@@ -282,35 +286,36 @@ router.get("/driver/stats", protect, async (req, res) => {
   }
 });
 
+const User = require("../models/user");
 
 router.get("/available", protect, async (req, res) => {
-  if (req.user.role !== "driver")
+  if (req.user.role !== "driver") {
     return res.status(403).json({ message: "Only drivers can view available orders" });
+  }
 
-  try {
-    const orders = await Order.find({
-      status: "Ready for Pickup",
-      assignedDriver: null
-    })
-      .populate("customerId", "name email")
-      .populate({
-        path: "products.productId",
-        select: "name price image vendorId",
-        populate: {
-          path: "vendorId",
-          model: "User",
-          select: "businessName businessAddress businessPhone"
-        }
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+  const driver = await User.findById(req.user._id);
 
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch available orders", error: err.message });
+  if (!driver.isAvailable) {
+    return res.json([]); // 🔥 no orders if offline
+  }
+
+  const orders = await Order.find({
+  status: "Ready for Pickup",
+  assignedDriver: null
+})
+.populate("customerId", "name email")
+.populate({
+  path: "products.productId",
+  select: "name price image vendorId",
+  populate: {
+    path: "vendorId",
+    model: "User",
+    select: "businessName businessAddress businessPhone"
   }
 });
 
+  res.json(orders);
+});
 /**
  * Driver marks delivered
  */
@@ -336,10 +341,6 @@ router.put("/:orderId/deliver", protect, async (req, res) => {
     }
 
     order.status = "Delivered";
-   order.charges = {
-  ...order.charges,      // KEEP EXISTING CHARGES
-  deliveryCharge: 30     // update only what you want
-};
 
     await order.save();
 
@@ -979,6 +980,14 @@ router.put('/:orderId/status', protect, async (req, res) => {
     });
 
     await order.save();
+    const io = req.app.get("io");
+
+if (io && order.status === "Ready for Pickup") {
+  io.emit("newOrderAvailable", {
+    order,
+    message: "New order ready for pickup"
+  });
+}
 
     // emit socket event to vendors + customer
     await emitToVendorsAndCustomer(req, order._id, 'orderUpdated', { status });

@@ -1,7 +1,7 @@
 import { useState, useEffect,useMemo } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-
+import { io } from "socket.io-client";
 import {
   BarChart,
   Bar,
@@ -21,7 +21,7 @@ const defaultCenter = { lat: 23.0225, lng: 72.5714 };
 const DriverDashboardPage = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [availability, setAvailability] = useState(true);
+  const [availability, setAvailability] = useState(false);
   const [availableOrders, setAvailableOrders] = useState([]);
   const [activeOrders, setActiveOrders] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -29,6 +29,7 @@ const DriverDashboardPage = () => {
   const [profile, setProfile] = useState(null);
 const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+const [notifications, setNotifications] = useState([]);
   const [selectedMarker, setSelectedMarker] = useState(null); // for map InfoWindow
   const [driverLocation, setDriverLocation] = useState(null);
 
@@ -56,7 +57,7 @@ const weeklyData = useMemo(() => {
   driverStats.deliveredOrders?.forEach(order => {
     const day = days[new Date(order.createdAt).getDay()];
     const item = data.find(d => d.day === day);
-    if (item) item.amount += order.charges?.deliveryCharge || 0;
+    if (item) item.amount += order.charges?.driverEarning || 0;
   });
 
   return data;
@@ -177,12 +178,45 @@ const fetchDriverStats = async () => {
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
+  if (!availability) return;
+
+  fetchOrders();
+  fetchDriverStats();
+
+  const socket = io(API);
+
+  socket.on("connect", () => {
+    console.log("🟢 Socket connected");
+  });
+
+  socket.on("newOrderAvailable", (data) => {
+    console.log("🔥 New order received:", data);
+
+    // refresh orders instantly
     fetchOrders();
-    fetchDriverStats();
-    const interval = setInterval(fetchOrders, 15000); // Auto-refresh every 15 sec
-    return () => clearInterval(interval);
-  }, []);
+
+    toast.success("🚀 New order available!");
+  });
+socket.on("newOrderAvailable", (data) => {
+
+  setNotifications(prev => [
+    {
+      id: Date.now(),
+      message: "🚀 New order available",
+      time: new Date().toLocaleTimeString()
+    },
+    ...prev
+  ]);
+
+  fetchOrders();
+  toast.success("🚀 New order available!");
+});
+  return () => {
+    socket.disconnect();
+  };
+}, [availability]);
+
 
   const { isLoaded } = useJsApiLoader({
 googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -266,21 +300,34 @@ const RecentOrders = ({ ordersList }) => (
 
       const vendor = resolveVendorForOrder(order);
 
-      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${
-        encodeURIComponent(order.deliveryDetails?.addressLine1 || "")
-      }`;
+      const vendorAddress = vendor?.address || "";
+const customerAddress = order.deliveryDetails?.addressLine1 || "";
+
+const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${
+  encodeURIComponent(vendorAddress)
+}&destination=${
+  encodeURIComponent(customerAddress)
+}`;
 
       return (
         <div
           key={order._id}
-          className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
+          className="bg-white rounded-xl p-4 border-l-4 border-orange-500 hover:shadow-lg transition-all duration-300"
         >
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-2">
-            <p className="text-sm font-semibold text-orange-600">
-              Order #{order._id.slice(-6)}
-            </p>
+            <div className="flex items-center gap-2">
+  <p className="text-sm font-semibold text-orange-600">
+    Order #{order._id.slice(-6)}
+  </p>
+
+  {order.status === "Ready for Pickup" && (
+    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+      🔥 New
+    </span>
+  )}
+</div>
 
             <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
               {order.status}
@@ -290,6 +337,13 @@ const RecentOrders = ({ ordersList }) => (
           {/* CUSTOMER */}
           <div className="text-sm">
             <p className="font-medium">{order.customerId?.name}</p>
+            <p className="text-xs text-gray-400 mt-1">
+  🕒 {new Date(order.createdAt).toLocaleTimeString()}
+</p>
+
+<p className="text-xs text-gray-500">
+  📦 {order.products?.length || 0} items
+</p>
             <p className="text-gray-500 text-xs">{order.deliveryDetails?.phone}</p>
           </div>
 
@@ -308,16 +362,35 @@ const RecentOrders = ({ ordersList }) => (
           </div>
 
           {/* VENDOR INFO */}
-          {vendor && (
-            <div className="mt-2 text-xs text-gray-500">
-              🏪 {vendor.name} <br />
-              📍 {vendor.address}
-            </div>
-          )}
+         {/* DELIVERY FLOW */}
+<div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+
+  <p>🏪 Pickup: {vendor?.address || "N/A"}</p>
+
+  <p className="mt-1">⬇️</p>
+
+  <p>🏠 Drop: {order.deliveryDetails?.addressLine1}</p>
+
+</div>
 
           {/* PRICE + MAP */}
           <div className="flex justify-between items-center mt-3">
-            <p className="text-sm font-bold">₹{order.totalAmount}</p>
+            <div>
+  <p className="text-sm font-bold text-green-600">
+    ₹{order.totalAmount}
+  </p>
+  <p className="text-xs text-gray-400">
+  {order.status === "Delivered" ? (
+  <span className="text-xs text-green-600">
+    Earned ₹{order.charges?.driverEarning || 0}
+  </span>
+) : (
+  <span className="text-xs text-gray-400">
+    Potential ₹{order.charges?.driverEarning || 0}
+  </span>
+)}
+</p>
+</div>
 
             <a
               href={mapsUrl}
@@ -359,7 +432,14 @@ const RecentOrders = ({ ordersList }) => (
   // ================= ORDERS WITH TABS =================
   const OrdersSection = () => {
     const [tab, setTab] = useState("available");
-    const displayedOrders = tab === "available" ? availableOrders : activeOrders;
+    const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 1;
+    const displayedOrders = (tab === "available" ? availableOrders : activeOrders)
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const indexOfLast = currentPage * ordersPerPage;
+const indexOfFirst = indexOfLast - ordersPerPage;
+
+const currentOrders = displayedOrders.slice(indexOfFirst, indexOfLast);
 
     return (
       <div className="bg-white rounded-xl shadow p-4 flex flex-col">
@@ -368,20 +448,81 @@ const RecentOrders = ({ ordersList }) => (
         <div className="flex space-x-2 mb-4">
           <button
             className={`px-4 py-2 rounded ${tab === "available" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"}`}
-            onClick={() => setTab("available")}
+            onClick={() => {
+  setTab("available");
+  setCurrentPage(1);
+}}
           >
             Available Orders
           </button>
           <button
             className={`px-4 py-2 rounded ${tab === "active" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"}`}
-            onClick={() => setTab("active")}
+            onClick={() => {
+  setTab("active");
+  setCurrentPage(1);
+}}
           >
             Active Orders
           </button>
         </div>
 
-       <div className="flex-1">
-  <RecentOrders ordersList={displayedOrders} />
+      <div className="flex-1 overflow-y-auto">
+  <RecentOrders ordersList={currentOrders} />
+<div className="sticky bottom-0 bg-white py-3 flex justify-between items-center border-t mt-3 px-4">
+
+  {/* PREVIOUS BUTTON */}
+  <button
+    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className={`px-3 py-1 rounded text-sm ${
+      currentPage === 1
+        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+        : "bg-orange-500 text-white hover:bg-orange-600"
+    }`}
+  >
+    ← Prev
+  </button>
+
+  {/* PAGE NUMBERS */}
+  <div className="flex gap-2">
+    {Array.from(
+      { length: Math.ceil(displayedOrders.length / ordersPerPage) },
+      (_, i) => (
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i + 1)}
+          className={`px-3 py-1 rounded text-sm ${
+            currentPage === i + 1
+              ? "bg-orange-500 text-white"
+              : "bg-gray-200 hover:bg-gray-300"
+          }`}
+        >
+          {i + 1}
+        </button>
+      )
+    )}
+  </div>
+
+  {/* NEXT BUTTON */}
+  <button
+    onClick={() =>
+      setCurrentPage(prev =>
+        Math.min(prev + 1, Math.ceil(displayedOrders.length / ordersPerPage))
+      )
+    }
+    disabled={
+      currentPage === Math.ceil(displayedOrders.length / ordersPerPage)
+    }
+    className={`px-3 py-1 rounded text-sm ${
+      currentPage === Math.ceil(displayedOrders.length / ordersPerPage)
+        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+        : "bg-orange-500 text-white hover:bg-orange-600"
+    }`}
+  >
+    Next →
+  </button>
+
+</div>
 </div>
       </div>
     );
@@ -389,9 +530,12 @@ const RecentOrders = ({ ordersList }) => (
 
   // ================= MAP =================
   const renderMap = () => {
-    if (!isLoaded) return <div>Loading Map...</div>;
+  if (!isLoaded) return <div>Loading Map...</div>;
 
-    return (
+  const currentOrder = activeOrders[0]; // ✅ MOVE HERE
+  const vendor = currentOrder ? resolveVendorForOrder(currentOrder) : null;
+
+  return (
       <div className="bg-white rounded-xl shadow p-4">
         <h2 className="text-lg font-semibold mb-3">Active Orders Map</h2>
        <GoogleMap
@@ -399,56 +543,77 @@ const RecentOrders = ({ ordersList }) => (
   center={driverLocation || defaultCenter}
   zoom={14}
 >
-          {activeOrders.map(order => (
-            <Marker
-              key={order._id}
-              position={{
-                lat: order.deliveryDetails?.latitude || defaultCenter.lat,
-                lng: order.deliveryDetails?.longitude || defaultCenter.lng
-              }}
-              onClick={() => setSelectedMarker(order)}
-            />
-          ))}
-          {/* Driver marker */}
-{driverLocation && (
-  <Marker
-    position={driverLocation}
-    icon={{
-      url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-    }}
-  />
-)}
 
+  {/* 🔴 Customer Marker */}
+  {currentOrder && (
+    <Marker
+      position={{
+        lat: currentOrder.deliveryDetails?.latitude || defaultCenter.lat,
+        lng: currentOrder.deliveryDetails?.longitude || defaultCenter.lng
+      }}
+      onClick={() => setSelectedMarker(currentOrder)}
+    />
+  )}
 
+  {/* 🟢 Vendor Marker */}
+  {vendor && currentOrder && (
+    <Marker
+      position={{
+        lat: currentOrder.products[0]?.vendorSnapshot?.location?.lat || defaultCenter.lat,
+        lng: currentOrder.products[0]?.vendorSnapshot?.location?.lng || defaultCenter.lng
+      }}
+      icon={{
+        url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+      }}
+    />
+  )}
 
-          {selectedMarker && (
-            <InfoWindow
-              position={{
-                lat: selectedMarker.deliveryDetails?.latitude,
-                lng: selectedMarker.deliveryDetails?.longitude
-              }}
-              onCloseClick={() => setSelectedMarker(null)}
-            >
-              <div>
-                <p className="font-semibold">Order ID: {selectedMarker._id}</p>
-                <p>{selectedMarker.deliveryDetails?.fullName}</p>
-                <p>{selectedMarker.deliveryDetails?.addressLine1}</p>
-                {selectedMarker.status === "Ready for Pickup" && !selectedMarker.assignedDriver && (
-  <button
-    onClick={() => assignOrder(selectedMarker._id)}
-    className="bg-orange-500 text-white px-3 py-1 rounded mt-2"
-  >
-    Accept
-  </button>
-)}
+  {/* 🔵 Driver Marker */}
+  {driverLocation && (
+    <Marker
+      position={driverLocation}
+      icon={{
+        url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+      }}
+    />
+  )}
 
-                {selectedMarker.assignedDriver && selectedMarker.status === "Out for Delivery" &&
-                  <button onClick={() => deliverOrder(selectedMarker._id)} className="bg-green-500 text-white px-3 py-1 rounded mt-2">Mark Delivered</button>
-                }
-              </div>
-            </InfoWindow>
-          )}
-        </GoogleMap>
+  {/* 📦 Info Window */}
+  {selectedMarker && (
+    <InfoWindow
+      position={{
+        lat: selectedMarker.deliveryDetails?.latitude,
+        lng: selectedMarker.deliveryDetails?.longitude
+      }}
+      onCloseClick={() => setSelectedMarker(null)}
+    >
+      <div>
+        <p className="font-semibold">Order ID: {selectedMarker._id}</p>
+        <p>{selectedMarker.deliveryDetails?.fullName}</p>
+        <p>{selectedMarker.deliveryDetails?.addressLine1}</p>
+
+        {selectedMarker.status === "Ready for Pickup" && !selectedMarker.assignedDriver && (
+          <button
+            onClick={() => assignOrder(selectedMarker._id)}
+            className="bg-orange-500 text-white px-3 py-1 rounded mt-2"
+          >
+            Accept
+          </button>
+        )}
+
+        {selectedMarker.assignedDriver && selectedMarker.status === "Out for Delivery" && (
+          <button
+            onClick={() => deliverOrder(selectedMarker._id)}
+            className="bg-green-500 text-white px-3 py-1 rounded mt-2"
+          >
+            Mark Delivered
+          </button>
+        )}
+      </div>
+    </InfoWindow>
+  )}
+
+</GoogleMap>
       </div>
     );
   };
@@ -663,21 +828,60 @@ const renderDashboard = () => (
   );
 };
 
-const NavigationSection = () => (
-  <div className="space-y-4">
-    <h1 className="text-xl font-semibold">Navigation</h1>
-    {renderMap()}
-  </div>
-);
+const NavigationSection = () => {
+  const currentOrder = activeOrders[0];
+  const vendor = currentOrder ? resolveVendorForOrder(currentOrder) : null;
+
+  return (
+    <div className="space-y-4">
+
+      <h1 className="text-xl font-semibold">Navigation</h1>
+
+      {currentOrder ? (
+        <div className="bg-white p-4 rounded-xl shadow text-sm space-y-2">
+
+          <p>👤 {currentOrder.deliveryDetails?.fullName}</p>
+
+          <p>🏪 Pickup: {vendor?.address || "N/A"}</p>
+
+          <p>🏠 Drop: {currentOrder.deliveryDetails?.addressLine1}</p>
+
+          <p className="text-green-600 font-semibold">
+            Earn ₹{currentOrder.charges?.driverEarning || 0}
+          </p>
+
+        </div>
+      ) : (
+        <p className="text-gray-500">No active delivery</p>
+      )}
+
+      {renderMap()}
+    </div>
+  );
+};
 const NotificationsSection = () => (
   <div className="bg-white rounded-xl shadow p-6">
+
     <h1 className="text-xl font-semibold mb-4">Notifications</h1>
 
-    {driverStats.notificationsCount === 0 ? (
+    {notifications.length === 0 ? (
       <p className="text-gray-500">No notifications</p>
     ) : (
-      <p>You have {driverStats.notificationsCount} new notifications</p>
+      <div className="space-y-3">
+
+        {notifications.map(n => (
+          <div
+            key={n.id}
+            className="border p-3 rounded flex justify-between items-center"
+          >
+            <p className="text-sm">{n.message}</p>
+            <span className="text-xs text-gray-400">{n.time}</span>
+          </div>
+        ))}
+
+      </div>
     )}
+
   </div>
 );
 const WalletSection = () => (
@@ -696,17 +900,154 @@ const WalletSection = () => (
     </button>
   </div>
 );
-const RatingsSection = () => (
-  <div className="bg-white rounded-xl shadow p-6">
-    <h1 className="text-xl font-semibold mb-4">Driver Ratings</h1>
+const RatingsSection = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
-    <p className="text-3xl font-bold">⭐ {driverStats.averageRating || 5}</p>
+  const reviewsPerPage = 3;
 
-    <p className="text-gray-500 mt-2">
-      Based on completed deliveries
-    </p>
-  </div>
-);
+  // ✅ ALL RATINGS
+  const allRatings = (driverStats.deliveredOrders || [])
+    .filter(o => o.customerRating?.rating)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // ✅ FILTER LOGIC
+  const filteredRatings =
+    selectedFilter === "all"
+      ? allRatings
+      : allRatings.filter(
+          o => Math.floor(o.customerRating.rating) === selectedFilter
+        );
+
+  // ✅ PAGINATION
+  const totalPages = Math.ceil(filteredRatings.length / reviewsPerPage);
+  const indexOfLast = currentPage * reviewsPerPage;
+  const indexOfFirst = indexOfLast - reviewsPerPage;
+  const currentRatings = filteredRatings.slice(indexOfFirst, indexOfLast);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedFilter, driverStats]);
+
+  return (
+    <div className="space-y-4">
+
+      {/* ⭐ AVERAGE */}
+      <div className="bg-white rounded-xl shadow p-6 text-center">
+        <p className="text-gray-500 text-sm">Average Rating</p>
+        <p className="text-4xl font-bold text-yellow-500">
+          ⭐ {driverStats.averageRating || 5}
+        </p>
+      </div>
+
+      {/* 🎯 FILTER BUTTONS */}
+      <div className="bg-white rounded-xl shadow p-4 flex flex-wrap gap-2 justify-center">
+        {["all", 5, 4, 3, 2, 1].map((f, i) => (
+          <button
+            key={i}
+            onClick={() => setSelectedFilter(f)}
+            className={`px-3 py-1 rounded-full text-sm transition ${
+              selectedFilter === f
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            {f === "all" ? "All" : `⭐ ${f}`}
+          </button>
+        ))}
+      </div>
+
+      {/* 📦 REVIEWS + FIXED HEIGHT */}
+      <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[420px]">
+
+        <h2 className="font-semibold mb-3">Customer Reviews</h2>
+
+        {filteredRatings.length === 0 ? (
+          <p className="text-gray-500">No ratings found</p>
+        ) : (
+          <>
+            {/* ✅ SCROLL AREA (FIXED HEIGHT) */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {currentRatings.map(order => (
+                <div
+                  key={order._id}
+                  className="border p-3 rounded-lg hover:shadow-sm transition"
+                >
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium text-yellow-500">
+                      ⭐ {order.customerRating.rating}
+                    </p>
+
+                    <span className="text-xs text-gray-400">
+                      #{order._id.slice(-5)}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mt-1">
+                    {order.customerRating.review || "No comment"}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* ✅ FIXED PAGINATION (BOTTOM LOCKED) */}
+            <div className="border-t pt-3 mt-3 flex justify-between items-center">
+
+              {/* PREV */}
+              <button
+                onClick={() =>
+                  setCurrentPage(prev => Math.max(prev - 1, 1))
+                }
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded text-sm ${
+                  currentPage === 1
+                    ? "bg-gray-200 text-gray-400"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+              >
+                ← Prev
+              </button>
+
+              {/* PAGE NUMBERS */}
+              <div className="flex gap-2">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      currentPage === i + 1
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              {/* NEXT */}
+              <button
+                onClick={() =>
+                  setCurrentPage(prev =>
+                    Math.min(prev + 1, totalPages)
+                  )
+                }
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded text-sm ${
+                  currentPage === totalPages
+                    ? "bg-gray-200 text-gray-400"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+              >
+                Next →
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 const SupportSection = () => (
   <div className="bg-white rounded-xl shadow p-6 space-y-2">
     <h1 className="text-xl font-semibold">Support</h1>
@@ -720,39 +1061,219 @@ const SupportSection = () => (
     </button>
   </div>
 );
-const EarningsSection = () => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {stats.map((s, i) => (
-        <div key={i} className="bg-white rounded-xl shadow p-4">
-          <div className="text-2xl">{s.icon}</div>
-          <p className="text-xl font-bold mt-2">{s.value}</p>
-          <p className="text-sm text-gray-500">{s.title}</p>
-        </div>
-      ))}
-    </div>
-    <WeeklyChart />
-  </div>
-);
-const DeliveryHistorySection = () => {
-  const deliveredOrders = orders.filter(o => o.status === "Delivered");
+const EarningsSection = () => {
 
+  // 🟢 Today Earnings
+  const todayEarnings = driverStats.deliveredOrders
+    ?.filter(order => {
+      const today = new Date();
+      const orderDate = new Date(order.createdAt);
+      return orderDate.toDateString() === today.toDateString();
+    })
+    .reduce((sum, order) => sum + (order.charges?.driverEarning || 0), 0);
+
+  // 🔵 Weekly Earnings
+  const weekEarnings = driverStats.deliveredOrders
+    ?.filter(order => {
+      const now = new Date();
+      const orderDate = new Date(order.createdAt);
+      const diff = (now - orderDate) / (1000 * 60 * 60 * 24);
+      return diff <= 7;
+    })
+    .reduce((sum, order) => sum + (order.charges?.driverEarning || 0), 0);
+
+  return (
+    <div className="space-y-6">
+
+      {/* 🔥 TOP CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <div className="bg-green-100 p-4 rounded-xl">
+          <p className="text-sm text-gray-600">Today Earnings</p>
+          <p className="text-2xl font-bold text-green-700">
+            ₹{todayEarnings}
+          </p>
+        </div>
+
+        <div className="bg-blue-100 p-4 rounded-xl">
+          <p className="text-sm text-gray-600">Last 7 Days</p>
+          <p className="text-2xl font-bold text-blue-700">
+            ₹{weekEarnings}
+          </p>
+        </div>
+
+        <div className="bg-orange-100 p-4 rounded-xl">
+          <p className="text-sm text-gray-600">Total Deliveries</p>
+          <p className="text-2xl font-bold text-orange-700">
+            {driverStats.totalDeliveries}
+          </p>
+        </div>
+
+      </div>
+
+      {/* 📊 CHART */}
+      <div className="bg-white rounded-xl shadow p-4">
+        <h2 className="text-lg font-semibold mb-2">
+          Weekly Earnings Overview
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Track your earnings for each day
+        </p>
+
+        <WeeklyChart />
+      </div>
+
+      {/* 📄 RECENT EARNINGS */}
+      <div className="bg-white rounded-xl shadow p-4">
+        <h2 className="font-semibold mb-3">Recent Earnings</h2>
+
+        <div className="space-y-2">
+          {driverStats.deliveredOrders
+            ?.slice(0, 5)
+            .map(order => (
+              <div key={order._id} className="flex justify-between text-sm">
+
+                <span>
+                  Order #{order._id.slice(-5)}
+                </span>
+
+                <span className="text-green-600 font-medium">
+                  ₹{order.charges?.driverEarning || 0}
+                </span>
+
+              </div>
+            ))}
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+const DeliveryHistorySection = () => {
+ const deliveredOrders = (driverStats.deliveredOrders || [])
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 2;
+const indexOfLast = currentPage * ordersPerPage;
+const indexOfFirst = indexOfLast - ordersPerPage;
+useEffect(() => {
+  setCurrentPage(1);
+}, [driverStats]);
+const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
   return (
     <div className="bg-white rounded-xl shadow p-6">
       <h1 className="text-xl font-semibold mb-4">Delivery History</h1>
-
+<p className="mb-4 text-green-600 font-semibold">
+  Total Earned: ₹{driverStats.totalEarnings}
+</p>
       {deliveredOrders.length === 0 ? (
-        <p className="text-gray-500">No deliveries yet</p>
-      ) : (
-        deliveredOrders.map(order => (
-          <div key={order._id} className="border p-3 rounded mb-3">
-            <p className="font-semibold text-orange-600">Order #{order._id}</p>
-            <p className="text-sm">{order.customerId?.name}</p>
-            <p className="text-sm">Amount: ₹{order.totalAmount}</p>
-            <p className="text-sm text-green-600">Delivered</p>
+  <p className="text-gray-500">No deliveries yet</p>
+) : (
+  <>
+    {/* ORDERS LIST */}
+    <div className="space-y-4">
+      {currentOrders.map(order => (
+        <div
+          key={order._id}
+          className="border rounded-lg p-4 hover:shadow-md transition"
+        >
+
+          {/* HEADER */}
+          <div className="flex justify-between items-center">
+            <p className="font-semibold text-orange-600">
+              Order #{order._id.slice(-6)}
+            </p>
+
+            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+              Delivered
+            </span>
           </div>
-        ))
-      )}
+
+          {/* CUSTOMER */}
+          <div className="text-sm mt-1 space-y-1">
+            <p>👤 {order.customerId?.name || "Customer"}</p>
+            <p className="text-xs text-gray-500">
+              📞 {order.deliveryDetails?.phone || "N/A"}
+            </p>
+            
+          </div>
+
+          {/* ADDRESS */}
+          <p className="text-xs text-gray-500 mt-1">
+            📍 {order.deliveryDetails?.addressLine1}, 
+            {order.deliveryDetails?.city}, 
+            {order.deliveryDetails?.state} - 
+            {order.deliveryDetails?.postalCode}
+          </p>
+
+          {/* TIME */}
+          <p className="text-xs text-gray-400 mt-1">
+            🕒 {new Date(order.createdAt).toLocaleString()}
+          </p>
+
+          {/* PRICE + EARNING */}
+          <div className="flex justify-between mt-3">
+            <p className="text-sm font-semibold text-green-600">
+              ₹{order.totalAmount}
+            </p>
+
+            <p className="text-sm text-blue-600 font-medium">
+              Earned ₹{order.charges?.driverEarning || 0}
+            </p>
+          </div>
+
+        </div>
+      ))}
+    </div>
+
+    {/* ✅ PAGINATION (ONLY ONCE) */}
+    <div className="mt-4 flex justify-between items-center">
+
+      <button
+        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+        className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+      >
+        ← Prev
+      </button>
+
+      <div className="flex gap-2">
+        {Array.from(
+          { length: Math.ceil(deliveredOrders.length / ordersPerPage) },
+          (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded ${
+                currentPage === i + 1
+                  ? "bg-orange-500 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {i + 1}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        onClick={() =>
+          setCurrentPage(prev =>
+            Math.min(prev + 1, Math.ceil(deliveredOrders.length / ordersPerPage))
+          )
+        }
+        disabled={
+          currentPage === Math.ceil(deliveredOrders.length / ordersPerPage)
+        }
+        className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+      >
+        Next →
+      </button>
+
+    </div>
+  </>
+)}
     </div>
   );
 };
@@ -793,12 +1314,20 @@ const DeliveryHistorySection = () => {
 
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    axios.get(`${API}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setProfile(res.data))
-      .catch(err => console.error("Failed to fetch profile:", err));
-  }, []);
+  const token = localStorage.getItem("token");
 
+  axios.get(`${API}/api/users/profile`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(res => {
+      setProfile(res.data);
+
+      // 🔥 ADD THIS LINE (VERY IMPORTANT)
+      setAvailability(res.data.isAvailable);
+    })
+    .catch(err => console.error("Failed to fetch profile:", err));
+
+}, []);
   useEffect(() => {
 
   const token = localStorage.getItem("token");
