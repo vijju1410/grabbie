@@ -242,17 +242,17 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
 
       {/* ================= HERO SECTION (UNCHANGED UI) ================= */}
       <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-10 sm:py-16 text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 leading-tight">
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
             Grab local deals,<br />delivered quick
           </h1>
 
-          <p className="text-sm sm:text-base md:text-xl mb-6 text-orange-100 px-2">
+          <p className="text-xl md:text-2xl mb-8 text-orange-100">
             Your favorite local restaurants and stores, now at your fingertips
           </p>
 
           <div ref={searchRef} className="max-w-2xl mx-auto relative">
-            <div className="flex items-center bg-white rounded-lg shadow overflow-hidden">
+            <div className="flex items-center bg-white rounded-lg shadow-lg overflow-hidden">
               <Search className="w-6 h-6 text-gray-400 ml-4" />
               <input
                 type="text"
@@ -260,7 +260,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
-                className="flex-1 px-3 py-3 text-sm sm:text-base text-gray-900 focus:outline-none"
+                className="flex-1 px-4 py-4 text-gray-900 focus:outline-none"
               />
 
               {searchQuery && (
@@ -352,7 +352,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
         🍴 Browse by Category
       </h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
         {categories.slice(0, 6).map((cat) => (
           <Link
             key={cat._id}
@@ -360,7 +360,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
 
 
 
-            className="bg-white shadow-sm rounded-xl p-4 sm:p-5 text-center"
+            className="bg-white shadow-md rounded-2xl p-6 text-center hover:shadow-xl transition"
           >
            <img
   src={cat.image}
@@ -468,7 +468,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
     </div>
 
     {loading && (
-  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
     {[1,2,3,4,5,6].map(i => (
       <div key={i} className="h-64 bg-gray-200 animate-pulse rounded-2xl" />
     ))}
@@ -480,7 +480,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
   </p>
 )}
 
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6s">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
       {(searchQuery ? searchProducts : homeProducts).map((product) => (
         <Link
           key={product._id}
@@ -489,8 +489,8 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
   product.stock === 0 ? "opacity-50" : "hover:shadow-lg"
 }`}
         >
-<div className="h-36 sm:h-48 flex items-center justify-center border-b relative"> 
-   <img
+          <div className="h-60 flex items-center justify-center border-b relative">
+  <img
     src={product.image}
     alt={product.name}
     className="max-h-48 object-contain"
@@ -503,8 +503,8 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
   )}
 </div>
 
-          <div className="p-3 sm:p-4 flex flex-col flex-1">
-            <h3 className="text-sm sm:text-base font-semibold mb-1">
+          <div className="p-5 flex flex-col flex-1">
+            <h3 className="text-lg font-semibold mb-2">
               {highlightText(product.name)}
             </h3>
    {ratings[product._id]?.totalReviews > 0 ? (
