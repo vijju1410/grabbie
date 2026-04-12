@@ -125,8 +125,7 @@ function AppWrapper() {
           element={token && user?.role === "admin" ? <AdminDashboardPage /> : <Navigate to="/" />}
         />
       </Routes>
-{token && user?.role === "customer" && <Footer />}
-    </>
+{token && user?.role === "customer" && location.pathname !== "/checkout" && <Footer />}    </>
   );
 }
 

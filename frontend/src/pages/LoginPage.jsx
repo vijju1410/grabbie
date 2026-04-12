@@ -318,28 +318,37 @@ className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-or
     
     {/* Step 1: Phone */}
     {otpStep === 1 && (
-      <>
+  <>
+    <p className="text-sm text-gray-600 mb-2">
+      Enter your phone number to receive OTP on your registered email
+    </p>
         <input
           type="text"
-          placeholder="Enter phone number"
+          placeholder="Enter your registered phone number"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-orange-500"
         />
+        <p className="text-xs text-gray-500 mt-1">
+  OTP will be sent to the email linked with this phone number
+</p>
 
         <button
           onClick={handleSendOtp}
           disabled={loading}
           className="w-full bg-orange-500 text-white py-3 rounded-lg"
         >
-          {loading ? "Sending OTP..." : "Send OTP"}
+          {loading ? "Sending OTP..." : "Send OTP to Email"}
         </button>
       </>
     )}
 
     {/* Step 2: OTP */}
-    {otpStep === 2 && (
-      <>
+  {otpStep === 2 && (
+  <>
+    <p className="text-sm text-gray-600 mb-2">
+      Enter the OTP sent to your registered email
+    </p>
         <input
           type="text"
           placeholder="Enter OTP"

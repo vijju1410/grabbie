@@ -184,20 +184,21 @@ const ProfilePage = () => {
 
   if (!user) {
     return (
-      <div className="flex justify-center mt-20">
-        <p className="text-gray-600">Loading profile...</p>
-      </div>
+     <div className="animate-pulse space-y-4">
+  <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto"></div>
+  <div className="h-40 bg-gray-200 rounded"></div>
+</div>
     );
   }
 
   /* ================= UI ================= */
   return (
-    <div className="max-w-3xl mx-auto mt-10 mb-10 p-6 bg-white rounded-xl shadow-lg">
+    <div className="max-w-3xl mx-auto mt-10 mb-10 p-6 bg-white rounded-2xl shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-orange-600">My Profile</h2>
         <button
           onClick={() => setEditMode(!editMode)}
-          className="bg-orange-500 text-white px-4 py-2 rounded-lg"
+          className="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-lg text-sm"
         >
           {editMode ? "Cancel" : "Edit Profile"}
         </button>
@@ -211,20 +212,24 @@ const ProfilePage = () => {
 
       <form onSubmit={handleUpdate} className="space-y-4">
         {/* PROFILE IMAGE */}
-        <div className="flex justify-center">
-         <img
-  src={
-    profileImageFile
-      ? URL.createObjectURL(profileImageFile)
-      : user.profileImage
-      ? user.profileImage
-      : "https://via.placeholder.com/150"
-  }
-  alt="Profile"
-  className="w-32 h-32 rounded-full object-cover border-2 border-orange-500"
-/>
+      <div className="flex items-center gap-4 mb-6">
+  <img
+    src={
+      profileImageFile
+        ? URL.createObjectURL(profileImageFile)
+        : user.profileImage
+        ? user.profileImage
+        : "https://via.placeholder.com/150"
+    }
+    alt="Profile"
+    className="w-20 h-20 rounded-full object-cover border-2 border-orange-500"
+  />
 
-        </div>
+  <div>
+    <h3 className="text-lg font-semibold">{user.name}</h3>
+    <p className="text-sm text-gray-500">{user.email}</p>
+  </div>
+</div>
 
         {editMode && (
           <div className="text-center">

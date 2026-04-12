@@ -51,34 +51,65 @@ router.post("/add", protect, upload.single("image"), async (req, res) => {
   }
 });
 
-
-// ================= GET PRODUCTS =================
+// ================= GET PRODUCTS WITH FILTER =================
 router.get("/", async (req, res) => {
   try {
-    const category = req.query.category;
+    const {
+      page = 1,
+      limit = 9,
+      category,
+      minPrice,
+      maxPrice,
+      sort,
+      stock
+    } = req.query;
+
     let filter = {};
 
+    // ✅ Category
     if (category) {
-      const normalizedCategory = category
-        .replace(/-/g, " ")
-        .replace(/\band\b/gi, "&");
-
-      filter = {
-        category: { $regex: `^${normalizedCategory}$`, $options: "i" },
-      };
+      filter.category = { $regex: `^${category}$`, $options: "i" };
     }
 
-    const products = await Product.find(filter).populate(
-      "vendorId",
-      "name email"
-    );
+    // ✅ Price range
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
 
-    res.json(products);
+    // ✅ Stock filter
+    if (stock === "true") {
+      filter.stock = { $gt: 0 };
+    }
+
+    // ✅ Sorting
+    let sortOption = {};
+    if (sort === "price_asc") sortOption.price = 1;
+    if (sort === "price_desc") sortOption.price = -1;
+
+    const products = await Product.find(filter)
+      .populate("vendorId", "name email")
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Product.countDocuments(filter);
+
+    res.json({
+      products,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch products", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch products",
+      error: error.message,
+    });
   }
 });
-
 
 // ================= SEARCH =================
 router.get("/search/query", async (req, res) => {
@@ -138,6 +169,9 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", protect, upload.single("image"), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
+    if (product.vendorId.toString() !== req.user._id.toString()) {
+  return res.status(403).json({ message: "Unauthorized" });
+}
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     const { name, price, category, description, stock } = req.body;
@@ -165,6 +199,9 @@ router.put("/:id", protect, upload.single("image"), async (req, res) => {
 
 // ================= DELETE =================
 router.delete("/:id", protect, async (req, res) => {
+  if (product.vendorId.toString() !== req.user._id.toString()) {
+  return res.status(403).json({ message: "Unauthorized" });
+}
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: "Product deleted" });

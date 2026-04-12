@@ -27,11 +27,11 @@ const CategoryPage = () => {
         // 🔹 Fetch offers
         const offerRes = await axios.get(`${API}/api/offers`);
 
-        setProducts(productRes.data);
+        setProducts(productRes.data.products);
         setOffers(offerRes.data);
 
         // 🔥 Fetch ratings for each product
-        const ratingPromises = productRes.data.map((p) =>
+       const ratingPromises = productRes.data.products.map((p) =>
           axios
             .get(`${API}/api/orders/product/${p._id}/ratings-summary`)
             .then((res) => ({
@@ -63,9 +63,9 @@ const CategoryPage = () => {
   }, [categorySlug]);
 
   // 🔍 Search
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredProducts = (products || []).filter((p) =>
+  p.name.toLowerCase().includes(query.toLowerCase())
+);
 
   // 🔥 Get offer for product
   const getOffer = (productId) => {
