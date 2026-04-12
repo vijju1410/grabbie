@@ -243,7 +243,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
       {/* ================= HERO SECTION (UNCHANGED UI) ================= */}
       <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
             Grab local deals,<br />delivered quick
           </h1>
 
@@ -468,7 +468,7 @@ setTotalPages(res.data.pages); // 🔥 IMPORTANT
     </div>
 
     {loading && (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     {[1,2,3,4,5,6].map(i => (
       <div key={i} className="h-64 bg-gray-200 animate-pulse rounded-2xl" />
     ))}

@@ -16,10 +16,10 @@ const Footer = () => {
       <div className="border-t border-gray-800"></div>
 
       {/* 🔥 Reduced padding */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {/* 🔥 4 COLUMN GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
 
           {/* ================= BRAND ================= */}
           <div>
@@ -30,7 +30,7 @@ const Footer = () => {
               <span className="text-xl font-bold">Grabbie</span>
             </div>
 
-            <p className="text-gray-400 text-sm leading-snug mb-3">
+            <p className="text-gray-400 text-xs sm:text-sm leading-snug mb-3">
               Grab local deals, delivered quick.
             </p>
 
@@ -67,11 +67,11 @@ const Footer = () => {
 
           {/* ================= QUICK LINKS ================= */}
           <div>
-            <h3 className="text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
+            <h3 className="text-xs sm:text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
               Quick Links
             </h3>
 
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1 text-xs sm:text-sm">
               <li>
                 <Link to="/" className="text-gray-400 hover:text-white">
                   Home
@@ -100,11 +100,11 @@ const Footer = () => {
 
           {/* ================= CONTACT ================= */}
           <div>
-            <h3 className="text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
+            <h3 className="text-xs sm:text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
               Contact
             </h3>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-xs sm:text-sm">
               <a
                 href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayprajapati1410@gmail.com"
                 target="_blank"
@@ -132,11 +132,11 @@ const Footer = () => {
 
           {/* ================= EXTRA (NEW WIDTH USAGE) ================= */}
           <div>
-            <h3 className="text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
+            <h3 className="text-xs sm:text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wide">
               About
             </h3>
 
-            <p className="text-gray-400 text-sm leading-snug">
+            <p className="text-gray-400 text-xs sm:text-sm leading-snug">
               Your favorite local stores & vendors, delivered fast at your doorstep.
             </p>
           </div>

@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  Home,
+  Grid,
+  Tag,
+  User,
+  Package,
+  LogOut
+} from "lucide-react";
 import { useCart } from "./CartContext"; // ✅ correct import
 import axios from "axios";
 const API = process.env.REACT_APP_API_URL;
@@ -235,54 +245,108 @@ useEffect(() => {
           </div>
         </div>
       </div>
-            {/* ================= MOBILE MENU ================= */}
+
       {menuOpen && (
-        <div className="md:hidden bg-white border-t shadow">
+  <div
+    className="fixed inset-0 bg-black/40 z-40 pointer-events-auto"
+    onClick={() => setMenuOpen(false)}
+  />
+)}
+            {/* ================= MOBILE MENU ================= */}
+            
+      {menuOpen && (
+    <div
+  onClick={(e) => e.stopPropagation()}
+  className={`fixed top-0 left-0 w-72 h-full bg-white z-50 transform transition-transform duration-300 ${
+    menuOpen ? "translate-x-0" : "-translate-x-full"
+  }`}
+>
+          <div className="flex justify-between items-center p-4 border-b">
+  <span className="font-bold text-lg">Menu</span>
+  <button onClick={() => setMenuOpen(false)}>
+    <X />
+  </button>
+</div>
           <nav className="flex flex-col px-4 py-4 space-y-4">
+            {isAuthenticated && (
+  <div className="flex items-center gap-3 pb-4 border-b">
+    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+      U
+    </div>
+    <div>
+      <p className="font-semibold">User</p>
+      <p className="text-xs text-gray-500">{userRole}</p>
+    </div>
+  </div>
+)}
 
             {/* CUSTOMER LINKS */}
             {isAuthenticated && isCustomer && (
               <>
-                <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
+                <Link
+  to="/"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <Home size={18} /> Home
+</Link>
 
                 <button
-                  onClick={() => setCategoryOpen(!categoryOpen)}
-                  className="text-left"
-                >
-                  Categories
-                </button>
+  onClick={() => setCategoryOpen(!categoryOpen)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100 text-left"
+>
+  <Grid size={18} /> Categories
+</button>
 
                 {categoryOpen && (
-                  <div className="ml-4 space-y-2">
-                    {categories.map((c) => (
-                      <Link
-                        key={c._id}
-                        to={`/category/${c.name}`}
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setCategoryOpen(false);
-                        }}
-                        className="block text-gray-600"
-                      >
-                        {c.name}
-                      </Link>
-                    ))}
+                 <div className="ml-6 space-y-2">
+                   {categories.map((c) => (
+  <Link
+    key={c._id}
+    to={`/category/${encodeURIComponent(c.name)}`}
+    onClick={() => {
+      setTimeout(() => {
+        setMenuOpen(false);
+        setCategoryOpen(false);
+      }, 150);
+    }}
+    className="block text-gray-600"
+  >
+    {c.name}
+  </Link>
+))}
                   </div>
                 )}
-<Link to="/offers" onClick={() => setMenuOpen(false)}>
-  Deals
+<Link
+  to="/offers"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <Tag size={18} /> Deals
 </Link>
-                <Link to="/about" onClick={() => setMenuOpen(false)}>
-                  About Us
-                </Link>
+                <Link
+  to="/about"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <User size={18} /> About Us
+</Link>
 
-                <Link to="/orders" onClick={() => setMenuOpen(false)}>
-                  My Orders
-                </Link>
+                <Link
+  to="/orders"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <Package size={18} /> My Orders
+</Link>
 
-                <Link to="/cart" onClick={() => setMenuOpen(false)}>
-                  Cart ({cart.length})
-                </Link>
+                <Link
+  to="/cart"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <ShoppingCart size={18} /> Cart ({cart.length})
+</Link>
               </>
             )}
 
@@ -321,17 +385,22 @@ useEffect(() => {
               </>
             ) : (
               <>
-                <Link to="/profile" onClick={() => setMenuOpen(false)}>
-                  Profile
-                </Link>
+               <Link
+  to="/profile"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-100"
+>
+  <User size={18} /> Profile
+</Link>
                 <button
+                
                   onClick={() => {
                     handleLogout();
                     setMenuOpen(false);
                   }}
-                  className="text-left text-red-600"
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-red-600 hover:bg-red-50"
                 >
-                  Logout
+                  <LogOut size={18} /> Logout
                 </button>
               </>
             )}
