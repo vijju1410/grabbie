@@ -193,12 +193,12 @@ const ProfilePage = () => {
 
   /* ================= UI ================= */
   return (
-    <div className="max-w-3xl mx-auto mt-10 mb-10 p-6 bg-white rounded-2xl shadow-md">
+    <div className="max-w-3xl mx-auto mt-6 sm:mt-10 mb-6 sm:mb-10 px-4 sm:px-6 py-5 sm:py-6 bg-white rounded-2xl shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-orange-600">My Profile</h2>
         <button
           onClick={() => setEditMode(!editMode)}
-          className="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-lg text-sm"
+          className="bg-orange-500 hover:bg-orange-600 transition text-white px-5 py-2.5 text-sm sm:text-base rounded-lg text-sm"
         >
           {editMode ? "Cancel" : "Edit Profile"}
         </button>
@@ -212,7 +212,7 @@ const ProfilePage = () => {
 
       <form onSubmit={handleUpdate} className="space-y-4">
         {/* PROFILE IMAGE */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left mb-6">
   <img
     src={
       profileImageFile
@@ -222,7 +222,7 @@ const ProfilePage = () => {
         : "https://via.placeholder.com/150"
     }
     alt="Profile"
-    className="w-20 h-20 rounded-full object-cover border-2 border-orange-500"
+    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-orange-500"
   />
 
   <div>
@@ -254,7 +254,7 @@ const ProfilePage = () => {
                 name="name"
                 value={formData.name || ""}
                 onChange={handleChange}
-                className="w-full border p-2 rounded"
+                className="w-full border p-2.5 rounded text-sm sm:text-base"
               />
               {errors.name && (
                 <p className="text-red-500 text-sm">{errors.name}</p>
@@ -276,7 +276,7 @@ const ProfilePage = () => {
           <label>Mobile Number</label>
           {editMode ? (
             <>
-              <div className="flex">
+              <div className="flex flex-col sm:flex-row">
                 <span className="px-3 flex items-center border border-r-0 rounded-l bg-gray-100">
                   +91
                 </span>
@@ -311,7 +311,7 @@ const ProfilePage = () => {
               placeholder="Business Name"
               value={formData.businessName || ""}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2.5 rounded text-sm sm:text-base"
             />
             {errors.businessName && (
               <p className="text-red-500 text-sm">{errors.businessName}</p>
@@ -322,7 +322,7 @@ const ProfilePage = () => {
               placeholder="Business Address"
               value={formData.businessAddress || ""}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2.5 rounded text-sm sm:text-base"
             />
             {errors.businessAddress && (
               <p className="text-red-500 text-sm">
@@ -335,7 +335,7 @@ const ProfilePage = () => {
               placeholder="Business Category"
               value={formData.businessCategory || ""}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2.5 rounded text-sm sm:text-base"
             />
             {errors.businessCategory && (
               <p className="text-red-500 text-sm">
@@ -353,7 +353,7 @@ const ProfilePage = () => {
               placeholder="Vehicle Number"
               value={formData.vehicleNumber || ""}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2.5 rounded text-sm sm:text-base"
             />
             {errors.vehicleNumber && (
               <p className="text-red-500 text-sm">
@@ -366,7 +366,7 @@ const ProfilePage = () => {
               placeholder="License Number"
               value={formData.licenseNumber || ""}
               onChange={handleChange}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2.5 rounded text-sm sm:text-base"
             />
             {errors.licenseNumber && (
               <p className="text-red-500 text-sm">

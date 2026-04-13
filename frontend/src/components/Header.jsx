@@ -23,12 +23,20 @@ const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [categories, setCategories] = useState([]);
-
+const [userName, setUserName] = useState("");
+const [userImage, setUserImage] = useState("");
   const categoryRef = useRef(null);
   const { cart, fetchCart } = useCart(); // ✅ get cart from context
 
-  const isActive = (path) => location.pathname === path;
-
+const isActive = (path) => {
+  if (path === "/category") {
+    return (
+      location.pathname.startsWith("/category") ||
+      location.pathname === "/categories"
+    );
+  }
+  return location.pathname === path;
+};
   // Handle authentication and redirection
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,6 +46,8 @@ const Header = () => {
       const parsedUser = JSON.parse(user);
       setIsAuthenticated(true);
       setUserRole(parsedUser.role);
+      setUserName(parsedUser.name);
+      setUserImage(parsedUser.profileImage);
 
       if (location.pathname === "/") {
         if (parsedUser.role === "driver") navigate("/driver");
@@ -133,7 +143,11 @@ useEffect(() => {
                   <div className="relative" ref={categoryRef}>
                     <button
                       onClick={() => setCategoryOpen(!categoryOpen)}
-                      className="text-gray-700 hover:text-orange-600"
+                   className={
+  isActive("/category")
+    ? "text-orange-600"
+    : "text-gray-700 hover:text-orange-600"
+}
                     >
                       Categories
                     </button>
@@ -257,7 +271,7 @@ useEffect(() => {
       {menuOpen && (
     <div
   onClick={(e) => e.stopPropagation()}
-  className={`fixed top-0 left-0 w-72 h-full bg-white z-50 transform transition-transform duration-300 ${
+  className={`fixed top-0 left-0 w-64 sm:w-72 h-full bg-white z-50 transform transition-transform duration-300 ease-in-out ${
     menuOpen ? "translate-x-0" : "-translate-x-full"
   }`}
 >
@@ -269,13 +283,28 @@ useEffect(() => {
 </div>
           <nav className="flex flex-col px-4 py-4 space-y-4">
             {isAuthenticated && (
-  <div className="flex items-center gap-3 pb-4 border-b">
-    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-      U
-    </div>
+  <div className="flex items-center gap-3 pb-4 border-b mb-2">
+    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+  {userImage ? (
+    <img
+      src={userImage}
+      alt="user"
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <span className="text-white bg-orange-500 w-full h-full flex items-center justify-center font-bold">
+      {userName?.charAt(0).toUpperCase()}
+    </span>
+  )}
+</div>
     <div>
-      <p className="font-semibold">User</p>
-      <p className="text-xs text-gray-500">{userRole}</p>
+      <p className="font-semibold">{userName}</p>
+     <p className="text-xs text-gray-500">
+  {userRole === "customer" && "Customer"}
+  {userRole === "vendor" && "Vendor"}
+  {userRole === "admin" && "Admin"}
+  {userRole === "driver" && "Delivery Partner"}
+</p>
     </div>
   </div>
 )}

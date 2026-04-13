@@ -286,7 +286,7 @@ onClick={() => {
 </p>
 
         {/* Actions */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           {isInCart && (
   <p className="text-green-600 text-sm mt-2">
     ✔ Already in cart
@@ -295,16 +295,16 @@ onClick={() => {
   {isInCart ? (
     <button
       onClick={() => navigate("/cart")}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow"
-    >
+className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg shadow"   
+ >
       Go to Cart
     </button>
   ) : (
     <button
       onClick={addToCart}
       disabled={product.stock === 0}
-      className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
-    >
+className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow"
+ >
      {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
     </button>
   )}
@@ -312,7 +312,7 @@ onClick={() => {
   <button
     onClick={buyNow}
     disabled={product.stock === 0}
-    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow disabled:opacity-50"
+className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow"
   >
     Buy Now
   </button>

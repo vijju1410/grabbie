@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../components/CartContext";
 import toast, { Toaster } from "react-hot-toast";
+import { useState } from "react";
+
 import { useEffect } from "react";
 const API = process.env.REACT_APP_API_URL;
 
@@ -9,6 +11,7 @@ const CartPage = () => {
   const { cart, fetchCart } = useCart();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+const [offers, setOffers] = useState([]);
 
   /* ================= UPDATE QUANTITY ================= */
   const updateQuantity = async (productId, newQty, stock) => {
@@ -63,12 +66,40 @@ useEffect(() => {
   });
 }, [cart]);
 
+
+useEffect(() => {
+  const fetchOffers = async () => {
+    try {
+      const res = await fetch(`${API}/api/offers`);
+      const data = await res.json();
+      setOffers(data);
+    } catch (err) {
+      console.error("Offer fetch error", err);
+    }
+  };
+
+  fetchOffers();
+}, []);
+
+
+const getFinalPrice = (product) => {
+  const offer = offers.find(
+    (o) => o.productId?._id === product._id
+  );
+
+  if (!offer) return product.price;
+
+  return offer.discountType === "percent"
+    ? product.price - (product.price * offer.discountValue) / 100
+    : product.price - offer.discountValue;
+};
+
   /* ================= TOTAL ================= */
 const total = cart
   .reduce(
     (sum, item) =>
       sum +
-      Number(item.productId?.price || 0) *
+      getFinalPrice(item.productId) *
       Number(item.quantity || 1),
     0
   )
@@ -89,7 +120,13 @@ const total = cart
       </div>
     );
   }
+const totalSavings = cart.reduce((sum, item) => {
+  const original = item.productId.price;
+  const discounted = getFinalPrice(item.productId);
+  const qty = item.quantity;
 
+  return sum + (original - discounted) * qty;
+}, 0).toFixed(2);
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6">
       <Toaster position="top-right" />
@@ -98,7 +135,9 @@ const total = cart
 
       <div className="space-y-4">
         {cart.map((item) => {
-          const price = item.productId.price;
+          const price = getFinalPrice(item.productId);
+const originalPrice = item.productId.price;
+const hasDiscount = price < originalPrice;
           const qty = item.quantity;
           const subtotal = (price * qty).toFixed(2);
 
@@ -126,13 +165,31 @@ const total = cart
                     </span>
                   )}
 
-                  <p className="text-sm text-gray-600 mt-1">
-                    {item.productId.description?.slice(0, 80)}...
-                  </p>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+  {item.productId.description}
+</p>
 
-                  <p className="text-green-600 font-bold mt-2">
-                    ₹{price}
-                  </p>
+             <div className="mt-2 flex items-center gap-3 flex-wrap">
+  <div>
+    {hasDiscount && (
+      <p className="text-sm text-gray-400 line-through">
+        ₹{originalPrice}
+      </p>
+    )}
+
+    <p className="text-green-600 font-bold text-lg">
+      ₹{price}
+    </p>
+  </div>
+
+ {hasDiscount && (
+  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded whitespace-nowrap">
+    {offers.find(o => o.productId?._id === item.productId._id)?.discountType === "percent"
+      ? `${offers.find(o => o.productId?._id === item.productId._id)?.discountValue}% OFF`
+      : `₹${offers.find(o => o.productId?._id === item.productId._id)?.discountValue} OFF`}
+  </span>
+)}
+</div>
 
                   {item.productId.stock <= 5 && item.productId.stock > 0 && (
   <p className="text-red-500 text-xs">
@@ -162,54 +219,69 @@ const total = cart
               </div>
 
               {/* QUANTITY CONTROLS */}
-              <div className="flex items-center gap-3">
-               <button
-  disabled={qty === 1}
-onClick={() =>
-  updateQuantity(item.productId._id, qty - 1, item.productId.stock)
-}
-  className={`px-3 py-1 rounded ${
-    qty === 1
-      ? "bg-gray-200 cursor-not-allowed opacity-50"
-      : "bg-gray-300"
-  }`}
->
-  -
-</button>
+        {/* ACTIONS (Quantity + Remove) */}
+<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
 
-<span className="font-semibold">{qty}</span>
+  {/* Quantity */}
+  <div className="flex items-center gap-3">
+    <button
+      disabled={qty === 1}
+      onClick={() =>
+        updateQuantity(item.productId._id, qty - 1, item.productId.stock)
+      }
+      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded ${
+        qty === 1
+          ? "bg-gray-200 cursor-not-allowed opacity-50"
+          : "bg-gray-300"
+      }`}
+    >
+      -
+    </button>
 
-<button
-disabled={qty >= item.productId.stock}  
-onClick={() =>
-  updateQuantity(item.productId._id, qty + 1, item.productId.stock)
-}
-  className={`px-3 py-1 rounded ${
-qty >= item.productId.stock
-      ? "bg-gray-200 cursor-not-allowed opacity-50"
-      : "bg-gray-300"
-  }`}
->
-  +
-</button>
+    <span className="font-semibold">{qty}</span>
 
-              </div>
+    <button
+      disabled={qty >= item.productId.stock}
+      onClick={() =>
+        updateQuantity(item.productId._id, qty + 1, item.productId.stock)
+      }
+      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded ${
+        qty >= item.productId.stock
+          ? "bg-gray-200 cursor-not-allowed opacity-50"
+          : "bg-gray-300"
+      }`}
+    >
+      +
+    </button>
+  </div>
 
-              {/* REMOVE */}
-              <button
-                onClick={() => removeItem(item.productId._id)}
-                className="text-red-500 hover:underline"
-              >
-                Remove
-              </button>
-            </div>
+  {/* Remove */}
+  <button
+    onClick={() => removeItem(item.productId._id)}
+    className="text-red-500 px-2 py-1 rounded hover:bg-red-50"
+  >
+    Remove
+  </button>
+
+</div>
+
+</div>
           );
         })}
       </div>
 
       {/* TOTAL */}
-      <div className="mt-6 flex flex-col sm:flex-row justify-between items-center border-t pt-4 gap-4">
-        <h2 className="text-xl font-bold">Total: ₹{total}</h2>
+    <div className="mt-6 flex flex-col sm:flex-row justify-between items-center border-t pt-4 gap-4 sticky bottom-0 bg-white">
+
+  <div className="flex flex-col">
+    <h2 className="text-xl font-bold">Total: ₹{total}</h2>
+
+    {Number(totalSavings) > 0 && (
+      <p className="text-green-600 text-sm">
+        🎉 You saved ₹{totalSavings}
+      </p>
+    )}
+  </div>
         <button
   onClick={() => navigate("/checkout")}
   disabled={cart.some(item => item.productId.stock === 0)}
