@@ -80,7 +80,7 @@ const paginatedReviews = useMemo(() => {
   return filteredReviews.slice(start, start + REVIEWS_PER_PAGE);
 }, [filteredReviews, reviewPage]);
 
-const OFFERS_PER_PAGE = 3;
+const OFFERS_PER_PAGE = 2;
 const [offerPage, setOfferPage] = useState(1);
 const totalOfferPages = Math.ceil(offers.length / OFFERS_PER_PAGE);
 
@@ -1049,7 +1049,17 @@ case 'Ready for Pickup': return 'bg-purple-100 text-purple-800';
     }
   };
 
+const handleDeleteOffer = async (id) => {
+  try {
+    await axios.delete(`${BACKEND_BASE}/api/offers/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
+    fetchOffers(); // refresh list
+  } catch (err) {
+    console.error(err);
+  }
+};
   // --- OrderActions component ---
   const OrderActions = ({ order }) => {
     // If order is delivered or cancelled → read-only
@@ -1301,7 +1311,7 @@ if (idProofFile) {
   if (!user) return <p>Loading...</p>;
 
   return (
-  <div className="max-w-5xl mx-auto mt-8 space-y-6">
+  <div className="max-w-5xl mx-auto mt-4 md:mt-8 px-3 md:px-0 space-y-6">
     {editMode && (
   <div className="bg-yellow-100 border border-yellow-300 p-3 rounded text-sm">
     ✏️ You are editing your profile
@@ -1312,14 +1322,14 @@ if (idProofFile) {
 <div className="bg-gradient-to-r from-orange-500 to-orange-400 rounded-2xl p-6 text-white shadow-lg space-y-4 hover:shadow-2xl transition duration-300">
 
   {/* 🔝 TOP ROW */}
-  <div className="flex items-center justify-between">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
     {/* 👤 LEFT SIDE */}
-    <div className="flex items-center gap-5">
+   <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left">
 
       <img
         src={user.profileImage || "https://via.placeholder.com/150"}
-        className="w-24 h-24 rounded-full border-4 border-white object-cover shadow"
+        className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white object-cover shadow"
       />
 
       <div>
@@ -1342,14 +1352,14 @@ if (idProofFile) {
     {/* ✏️ EDIT BUTTON */}
     <button
       onClick={() => setEditMode(!editMode)}
-      className="bg-white text-orange-600 px-5 py-2 rounded-lg font-semibold shadow hover:scale-105 hover:bg-gray-100 transition font-semibold shadow hover:scale-105 transition"
-    >
+className="bg-white text-orange-600 px-5 py-2 rounded-lg w-full md:w-auto"   
+ >
       {editMode ? "Cancel" : "Edit Profile"}
     </button>
 
   </div>
 
-  {/* 📊 STATS */}<div className="flex gap-6 text-sm">
+  {/* 📊 STATS */}<div className="grid grid-cols-2 md:flex gap-4 text-sm">
 
   <div className="bg-white/20 px-4 py-2 rounded-lg">
   <p className="font-bold text-lg">
@@ -1397,7 +1407,7 @@ if (idProofFile) {
 </div>
 
     {/* 🔥 GRID SECTION */}
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
       {/* 👤 PERSONAL INFO */}
       <div className="bg-white rounded-2xl shadow p-6">
@@ -1667,6 +1677,25 @@ if (idProofFile) {
 
         {/* Main Content */}
     <div className="flex-1 ml-0 md:ml-64 p-3 pt-6 md:pt-8 md:p-8">
+      
+      {/* 🔥 GLOBAL MOBILE HEADER */}
+{/* 🔥 GLOBAL MOBILE HEADER */}
+<div className="mb-4 flex items-center gap-3 md:hidden">
+
+  {/* ☰ MENU BUTTON */}
+  <button
+    onClick={() => setSidebarOpen(true)}
+    className="bg-white p-2 rounded shadow"
+  >
+    <Menu className="w-6 h-6" />
+  </button>
+
+  {/* TITLE */}
+  <h1 className="text-lg font-semibold capitalize">
+    {activeTab}
+  </h1>
+
+</div>
 
           
 
@@ -1676,12 +1705,7 @@ if (idProofFile) {
  <div className="mb-6 flex items-center gap-3">
 
   {/* ☰ MENU BUTTON */}
-  <button
-    onClick={() => setSidebarOpen(true)}
-    className="md:hidden bg-white p-2 rounded shadow"
-  >
-    <Menu className="w-6 h-6" />
-  </button>
+
 
   {/* TITLE */}
   <div>
@@ -1838,7 +1862,7 @@ if (idProofFile) {
 
       {/* ✅ FIXED PAGINATION (OUTSIDE TABLE) */}
       {totalPages > 1 && (
-        <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t">
+       <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t">
 
           <button
             disabled={currentPage === 1}
@@ -2106,7 +2130,7 @@ if (idProofFile) {
 
 </div>
       {totalProductPages > 1 && (
-  <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t">
+  <div className="p-4 flex justify-center items-center gap-2 border-t mt-6">
 
     <button
       disabled={currentPage === 1}
@@ -2152,26 +2176,31 @@ if (idProofFile) {
 
 {activeTab === 'offers' && (
   <div>
+
     {/* HEADER */}
     <div className="mb-6">
-      <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Offers</h1>
       <p className="text-gray-600 mt-1">
         Create and manage your discounts
       </p>
     </div>
 
     {/* CREATE OFFER */}
-    <div className="bg-white p-6 rounded-xl shadow mb-6">
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow mb-6">
       <h2 className="font-semibold mb-4">Create Offer</h2>
 
-      <form onSubmit={handleCreateOffer} className="grid md:grid-cols-4 gap-4">
+      {/* ✅ MOBILE RESPONSIVE FORM */}
+      <form
+        onSubmit={handleCreateOffer}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"
+      >
 
         <select
           value={offerForm.productId}
           onChange={(e) =>
             setOfferForm({ ...offerForm, productId: e.target.value })
           }
-          className="border p-2 rounded"
+          className="border p-2 rounded w-full"
           required
         >
           <option value="">Select Product</option>
@@ -2187,7 +2216,7 @@ if (idProofFile) {
           onChange={(e) =>
             setOfferForm({ ...offerForm, discountType: e.target.value })
           }
-          className="border p-2 rounded"
+          className="border p-2 rounded w-full"
         >
           <option value="percent">%</option>
           <option value="flat">₹</option>
@@ -2200,7 +2229,7 @@ if (idProofFile) {
           onChange={(e) =>
             setOfferForm({ ...offerForm, discountValue: e.target.value })
           }
-          className="border p-2 rounded"
+          className="border p-2 rounded w-full"
           required
         />
 
@@ -2210,84 +2239,120 @@ if (idProofFile) {
           onChange={(e) =>
             setOfferForm({ ...offerForm, expiryDate: e.target.value })
           }
-          className="border p-2 rounded"
+          className="border p-2 rounded w-full"
         />
 
-        <button className="col-span-4 bg-orange-500 text-white py-2 rounded">
+        <button className="col-span-1 sm:col-span-2 md:col-span-4 bg-orange-500 text-white py-2 rounded">
           Create Offer
         </button>
       </form>
     </div>
 
     {/* OFFERS LIST */}
- <div className="bg-white rounded-xl shadow flex flex-col min-h-[400px]">
+    <div className="bg-white rounded-xl shadow flex flex-col min-h-[400px]">
 
-  {/* 🔹 OFFERS LIST */}
-  <div className="flex-1 p-6 space-y-3">
+      <div className="flex-1 p-4 md:p-6 space-y-4">
 
-    {offers.length === 0 ? (
-      <p className="text-gray-500 text-center">No offers yet</p>
-    ) : (
-      paginatedOffers.map((o) => (
-        <div key={o._id} className="border p-3 rounded flex justify-between">
+        {offers.length === 0 ? (
+          <p className="text-gray-500 text-center">No offers yet</p>
+        ) : (
+          paginatedOffers.map((o) => {
 
-          <div>
-            <p className="font-medium">{o.productId?.name}</p>
-            <p className="text-sm text-gray-500">
-              {o.discountType === "percent"
-                ? `${o.discountValue}% OFF`
-                : `₹${o.discountValue} OFF`}
-            </p>
-          </div>
+            const isExpired =
+              o.expiryDate && new Date(o.expiryDate) < new Date();
 
-          <p className="text-sm text-gray-400">
-            Expires: {o.expiryDate?.slice(0, 10)}
-          </p>
+            return (
+              <div
+                key={o._id}
+                className={`border rounded-xl p-4 flex flex-col md:flex-row md:justify-between gap-3 ${
+                  isExpired ? "bg-gray-50 opacity-70" : ""
+                }`}
+              >
+
+                {/* LEFT */}
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {o.productId?.name}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    {o.discountType === "percent"
+                      ? `${o.discountValue}% OFF`
+                      : `₹${o.discountValue} OFF`}
+                  </p>
+
+                  {/* STATUS */}
+                  <span
+                    className={`inline-block mt-2 px-2 py-1 text-xs rounded ${
+                      isExpired
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
+                  >
+                    {isExpired ? "Expired" : "Active"}
+                  </span>
+                </div>
+
+                {/* RIGHT */}
+                <div className="flex flex-col md:items-end gap-2">
+
+                  <p className="text-sm text-gray-400">
+                    Expires: {o.expiryDate?.slice(0, 10) || "No expiry"}
+                  </p>
+
+                  {/* DELETE BUTTON */}
+               <button
+  onClick={() => handleDeleteOffer(o._id)}
+  className="text-sm text-red-600 hover:underline"
+>
+  Delete
+</button>
+
+                </div>
+
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* PAGINATION */}
+      {totalOfferPages > 1 && (
+        <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t flex-wrap">
+
+          <button
+            disabled={offerPage === 1}
+            onClick={() => setOfferPage(p => p - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {[...Array(totalOfferPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setOfferPage(i + 1)}
+              className={`px-3 py-1 rounded border ${
+                offerPage === i + 1
+                  ? "bg-orange-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            disabled={offerPage === totalOfferPages}
+            onClick={() => setOfferPage(p => p + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
 
         </div>
-      ))
-    )}
-
-  </div>
-
-  {/* ✅ PAGINATION */}
-  {totalOfferPages > 1 && (
-    <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t">
-
-      <button
-        disabled={offerPage === 1}
-        onClick={() => setOfferPage(p => p - 1)}
-        className="px-3 py-1 border rounded disabled:opacity-50"
-      >
-        Prev
-      </button>
-
-      {[...Array(totalOfferPages)].map((_, i) => (
-        <button
-          key={i}
-          onClick={() => setOfferPage(i + 1)}
-          className={`px-3 py-1 rounded border ${
-            offerPage === i + 1
-              ? "bg-orange-500 text-white"
-              : "hover:bg-gray-100"
-          }`}
-        >
-          {i + 1}
-        </button>
-      ))}
-
-      <button
-        disabled={offerPage === totalOfferPages}
-        onClick={() => setOfferPage(p => p + 1)}
-        className="px-3 py-1 border rounded disabled:opacity-50"
-      >
-        Next
-      </button>
-
+      )}
     </div>
-  )}
-
-</div>
   </div>
 )}
             {/* Orders tab & analytics & customers: keep same structure; simplified here for space */}
@@ -2343,10 +2408,10 @@ if (idProofFile) {
   </div>
 
 </div>
-             <div className="bg-white rounded-xl shadow-md min-h-[500px] flex flex-col p-6">
+             <div className="bg-white rounded-xl shadow-md flex flex-col min-h-[70vh] p-4 md:p-6">
   
   {/* Orders Grid */}
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 content-start">
                {paginatedOrders.length === 0 ? (
   <div className="col-span-full text-center mt-10 text-gray-500">
     
@@ -2362,7 +2427,7 @@ if (idProofFile) {
 ) : (
   paginatedOrders.map((order) => (
 
-                    <div key={order._id} className="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
+                    <div key={order._id} className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
                      <div className="flex items-center justify-between mb-4">
   <span className="text-sm font-semibold text-gray-800">
     Order #{order._id}
@@ -2443,7 +2508,7 @@ if (idProofFile) {
               </div> {/* grid */}
               {/* ✅ CENTERED PAGINATION */}
     {totalOrderPages > 1 && (
-  <div className="mt-auto pt-6 flex justify-center">
+ <div className="mt-auto p-4 flex justify-center items-center gap-2">
     <div className="flex items-center gap-2 border-t pt-4 w-full justify-center">
 
       <button
@@ -2839,9 +2904,9 @@ if (idProofFile) {
 )}
 
 
-
 {activeTab === 'customers' && (
   <div>
+
     {/* 🔥 HEADER */}
     <div className="mb-6">
       <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
@@ -2850,95 +2915,151 @@ if (idProofFile) {
       </p>
     </div>
 
+    {/* 🔍 SEARCH */}
+   
+
     {/* 🔥 STATS */}
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 w-full">
-        <p className="text-gray-500 text-sm">Total Customers</p>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+      <div className="bg-white p-4 rounded-xl shadow">
+        <p className="text-sm text-gray-500">Total</p>
         <p className="text-xl font-bold">{customersList.length}</p>
       </div>
 
       <div className="bg-blue-100 p-4 rounded-xl text-center">
-        <p className="text-blue-700 text-sm">Active Customers</p>
+        <p className="text-sm text-blue-700">Active</p>
         <p className="text-xl font-bold">
           {customersList.filter(c => c.orders > 1).length}
         </p>
       </div>
 
       <div className="bg-orange-100 p-4 rounded-xl text-center">
-        <p className="text-orange-700 text-sm">New Customers</p>
+        <p className="text-sm text-orange-700">New</p>
         <p className="text-xl font-bold">
           {customersList.filter(c => c.orders === 1).length}
         </p>
       </div>
+
+      <div className="bg-green-100 p-4 rounded-xl text-center">
+        <p className="text-sm text-green-700">Top</p>
+        <p className="text-xl font-bold">
+          {customersList.filter(c => c.orders > 3).length}
+        </p>
+      </div>
+
     </div>
 
-    {/* 🔥 TABLE */}
-   <div className="bg-white rounded-xl shadow flex flex-col min-h-[450px]">
+    {/* 📱 MOBILE VIEW */}
+    <div className="block md:hidden space-y-4">
 
-      <div className="overflow-x-auto flex-1">
-        <table className="w-full text-sm">
+      {paginatedCustomers.map(c => (
+        <div key={c.id} className="bg-white p-4 rounded-xl shadow">
+
+          <div className="border-b pb-2">
+            <p className="font-semibold text-lg">{c.name}</p>
+            <p className="text-xs text-gray-500">{c.email}</p>
+          </div>
+
+          <div className="mt-3 text-sm space-y-2">
+            <p><b>Phone:</b> {c.phone || "N/A"}</p>
+            <p><b>Orders:</b> {c.orders}</p>
+
+            <p>
+              <b>Status:</b>{" "}
+              <span className={`px-2 py-1 text-xs rounded ${
+                c.orders === 1
+                  ? "bg-orange-100 text-orange-700"
+                  : c.orders > 3
+                  ? "bg-green-100 text-green-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}>
+                {c.orders === 1 ? "New" : c.orders > 3 ? "Top" : "Regular"}
+              </span>
+            </p>
+
+          </div>
+
+        </div>
+      ))}
+
+    </div>
+
+    {/* 💻 TABLE */}
+    <div className="bg-white rounded-xl shadow flex flex-col min-h-[450px]">
+
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
+
           <thead>
             <tr className="text-gray-500 text-left border-b">
               <th className="p-4">Customer</th>
               <th>Email</th>
               <th>Phone</th>
-              <th className="text-center">Orders</th>
+              <th>Orders</th>
+              <th>Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {paginatedCustomers.map((customer) => (
-              <tr
-                key={customer.id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                {/* 👤 CUSTOMER */}
+            {paginatedCustomers.map(c => (
+              <tr key={c.id} className="border-t hover:bg-gray-50">
+
                 <td className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 bg-orange-100 text-orange-600 flex items-center justify-center rounded-full font-bold">
-                    {customer.name?.charAt(0)}
+                    {c.name?.charAt(0)}
                   </div>
 
                   <div>
-                    <p className="font-medium">{customer.name}</p>
+                    <p className="font-medium">{c.name}</p>
                     <p className="text-xs text-gray-500">
-                      ID: {customer.id.slice(-6)}
+                      ID: {c.id.slice(-6)}
                     </p>
                   </div>
                 </td>
 
-                {/* 📧 EMAIL */}
-                <td>{customer.email || "N/A"}</td>
+                <td>{c.email || "N/A"}</td>
+                <td>{c.phone || "N/A"}</td>
 
-                {/* 📞 PHONE */}
-                <td>{customer.phone || "N/A"}</td>
-
-                {/* 📦 ORDERS */}
-                <td className="text-center">
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                    {customer.orders} Orders
+                <td>
+                  <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                    {c.orders}
                   </span>
                 </td>
+
+                <td>
+                  <span className={`px-2 py-1 text-xs rounded ${
+                    c.orders === 1
+                      ? "bg-orange-100 text-orange-700"
+                      : c.orders > 3
+                      ? "bg-green-100 text-green-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {c.orders === 1 ? "New" : c.orders > 3 ? "Top" : "Regular"}
+                  </span>
+                </td>
+
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
 
-      {/* 🔥 EMPTY STATE */}
+      {/* EMPTY */}
       {customersList.length === 0 && (
         <p className="text-center text-gray-500 p-6">
           No customers yet
         </p>
       )}
 
-      {/* 🔥 PAGINATION (MATCH PRODUCTS/ORDERS STYLE) */}
+      {/* PAGINATION */}
       {totalCustomerPages > 1 && (
-        <div className="mt-auto p-4 flex justify-center items-center gap-2 border-t">
+        <div className="mt-auto p-4 flex justify-center gap-2 border-t">
 
           <button
             disabled={customerPage === 1}
             onClick={() => setCustomerPage(p => p - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border rounded"
           >
             Prev
           </button>
@@ -2947,10 +3068,10 @@ if (idProofFile) {
             <button
               key={i}
               onClick={() => setCustomerPage(i + 1)}
-              className={`px-3 py-1 rounded border ${
+              className={`px-3 py-1 border rounded ${
                 customerPage === i + 1
                   ? "bg-orange-500 text-white"
-                  : "hover:bg-gray-100"
+                  : ""
               }`}
             >
               {i + 1}
@@ -2960,18 +3081,18 @@ if (idProofFile) {
           <button
             disabled={customerPage === totalCustomerPages}
             onClick={() => setCustomerPage(p => p + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border rounded"
           >
             Next
           </button>
 
         </div>
       )}
+
     </div>
+
   </div>
 )}
-
-
 
           </div>
         </div>
