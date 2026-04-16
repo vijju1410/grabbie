@@ -130,7 +130,13 @@ const growth = (() => {
 })();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-
+useEffect(() => {
+  if (sidebarOpen) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+}, [sidebarOpen]);
 
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -1049,7 +1055,7 @@ case 'Ready for Pickup': return 'bg-purple-100 text-purple-800';
     // If order is delivered or cancelled → read-only
 if (order.status === "Delivered" || order.status === "Cancelled") {
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex flex-wrap gap-2">
       <span className="px-3 py-1 text-sm rounded bg-green-100 text-green-700">
         {order.status}
       </span>
@@ -1546,10 +1552,15 @@ if (idProofFile) {
 )}
 
         {/* Sidebar */}
-       {/* Sidebar */}
-<div className={`fixed z-40 top-0 left-0 h-screen w-64 bg-white shadow-lg flex flex-col
+<div className={`fixed z-40 top-0 left-0 h-screen w-64 bg-white shadow-lg flex flex-col transition-transform duration-300
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
-
+{/* ❌ CLOSE BUTTON (MOBILE ONLY) */}
+<button
+  onClick={() => setSidebarOpen(false)}
+  className="md:hidden absolute top-4 right-4"
+>
+  <X className="w-6 h-6" />
+</button>
   {/* 🔶 TOP SECTION */}
   <div className="p-6 border-b">
 
@@ -1655,26 +1666,37 @@ if (idProofFile) {
   
 
         {/* Main Content */}
-     <div className="flex-1 ml-0 md:ml-64 p-4 pt-16 md:pt-8 md:p-8">
+    <div className="flex-1 ml-0 md:ml-64 p-3 pt-6 md:pt-8 md:p-8">
 
-          {/* Mobile Sidebar Toggle Button */}
-<button
-  onClick={() => setSidebarOpen(true)}
-  className="md:hidden mb-4 bg-white p-2 rounded shadow"
->
-  <Menu className="w-6 h-6" />
-</button>
+          
 
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto space-y-6">
             {activeTab === 'dashboard' && (
               <>
-  <div className="mb-8">
-    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-    <p className="text-gray-600 mt-2">Welcome back to your vendor dashboard</p>
+ <div className="mb-6 flex items-center gap-3">
+
+  {/* ☰ MENU BUTTON */}
+  <button
+    onClick={() => setSidebarOpen(true)}
+    className="md:hidden bg-white p-2 rounded shadow"
+  >
+    <Menu className="w-6 h-6" />
+  </button>
+
+  {/* TITLE */}
+  <div>
+    <h1 className="text-xl md:text-3xl font-bold text-gray-900">
+      Dashboard
+    </h1>
+    <p className="text-gray-600 mt-1">
+      Welcome back to your dashboard
+    </p>
   </div>
 
+</div>
+
   {/* Stats */}
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
     {stats.map((stat, index) => (
       <div key={index} className="bg-white rounded-xl shadow-md p-6">
         <div className="flex items-center space-x-4">
@@ -1691,11 +1713,11 @@ if (idProofFile) {
   </div>
 
   {/* Products + Orders */}
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+ <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 mt-4">
 
   {/* PRODUCTS */}
   <div className="lg:col-span-2">
-    <div className="bg-white rounded-xl shadow-md min-h-[450px] flex flex-col">
+    <div className="bg-white rounded-xl shadow-md flex flex-col">
 
       {/* Header */}
       <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -1709,8 +1731,56 @@ if (idProofFile) {
       </div>
 
       {/* TABLE */}
-      <div className="overflow-x-auto flex-1 min-h-[300px]">
-        <table className="min-w-[700px] border-separate border-spacing-y-2">
+      {/* MOBILE VIEW */}
+<div className="block md:hidden space-y-4 p-4">
+  {paginatedProducts.map(product => (
+    <div key={product._id} className="bg-white p-4 rounded-xl shadow">
+
+      <div className="flex items-center gap-3 border-b pb-3">
+        <img src={product.image} className="w-14 h-14 rounded" />
+        <div>
+          <p className="font-semibold">{product.name}</p>
+          <p className="text-xs text-gray-500">
+            ID: {product._id.slice(-6)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 text-sm space-y-2">
+        <p><b>Price:</b> ₹{product.price}</p>
+        <p><b>Category:</b> {product.category}</p>
+        <p className={`text-sm font-semibold ${
+  product.stock === 0
+    ? "text-red-600"
+    : product.stock <= 5
+    ? "text-yellow-600"
+    : "text-green-600"
+}`}>
+  Stock: {product.stock}
+</p>
+      </div>
+
+      <div className="mt-3 flex gap-3">
+        <button
+          onClick={() => handleEditClick(product)}
+          className="text-blue-600 text-sm font-medium"
+        >
+          Edit
+        </button>
+
+        <button
+          onClick={() => handleDelete(product)}
+          className="text-red-600 text-sm font-medium"
+        >
+          Delete
+        </button>
+      </div>
+
+    </div>
+  ))}
+</div>
+ <div className="hidden md:block overflow-x-auto flex-1 min-h-[300px]">
+  <table className="min-w-[700px]">
           <thead>
             <tr className="text-left text-xs uppercase text-gray-500">
               <th className="px-6 py-3">Product</th>
@@ -1725,7 +1795,10 @@ if (idProofFile) {
             {paginatedProducts.map(product => (
               <tr key={product._id} className="bg-white shadow-sm rounded-lg">
                 <td className="px-6 py-4 flex items-center gap-4">
-                  <img src={product.image} className="w-12 h-12 rounded border" />
+                 <img
+  src={product.image || "https://via.placeholder.com/100"}
+  className="w-12 h-12 rounded border"
+/>
                   <div>
                     <p className="font-medium">{product.name}</p>
                     <p className="text-xs text-gray-500">
@@ -1743,8 +1816,19 @@ if (idProofFile) {
                 <td className="px-6 py-4 text-center">{product.stock}</td>
 
                 <td className="px-6 py-4 text-center">
-                  <button className="text-blue-600 mr-2">Edit</button>
-                  <button className="text-red-600">Delete</button>
+                 <button
+  onClick={() => handleEditClick(product)}
+  className="text-blue-600 mr-2"
+>
+  Edit
+</button>
+
+<button
+  onClick={() => handleDelete(product)}
+  className="text-red-600"
+>
+  Delete
+</button>
                 </td>
               </tr>
             ))}
@@ -1797,11 +1881,11 @@ if (idProofFile) {
       <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
     </div>
 
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       {recentOrders.map((order) => (
-        <div key={order._id} className="border border-gray-200 rounded-lg p-4">
+        <div key={order._id} className="border border-gray-200 rounded-2xl p-4 shadow-sm space-y-2">
 
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm font-medium text-gray-900">
               {order._id}
             </span>
@@ -1821,7 +1905,7 @@ if (idProofFile) {
               .join(", ")}
           </p>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm font-semibold text-gray-900">
               ₹{order.totalAmount}
             </span>
@@ -1869,7 +1953,7 @@ if (idProofFile) {
 
     {/* 🔥 STATS BAR */}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white p-4 rounded-xl shadow text-center">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
         <p className="text-gray-500 text-sm">Total</p>
         <p className="text-xl font-bold">{products.length}</p>
       </div>
@@ -2458,7 +2542,7 @@ if (idProofFile) {
     </div>
 
     {/* Top Products */}
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-white rounded-xl shadow-sm p-5">
       <h2 className="text-lg font-semibold mb-4">Top Selling Products</h2>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={analyticsData.topProducts}>
@@ -2767,8 +2851,8 @@ if (idProofFile) {
     </div>
 
     {/* 🔥 STATS */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div className="bg-white p-4 rounded-xl shadow text-center">
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 w-full">
         <p className="text-gray-500 text-sm">Total Customers</p>
         <p className="text-xl font-bold">{customersList.length}</p>
       </div>
