@@ -466,7 +466,7 @@ const currentOrders = displayedOrders.slice(indexOfFirst, indexOfLast);
           </button>
         </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 md:overflow-y-auto">
   <RecentOrders ordersList={currentOrders} />
 <div className="sticky bottom-0 bg-white py-3 flex justify-between items-center border-t mt-3 px-4">
 
@@ -484,7 +484,7 @@ const currentOrders = displayedOrders.slice(indexOfFirst, indexOfLast);
   </button>
 
   {/* PAGE NUMBERS */}
-  <div className="flex gap-2">
+  <div className="flex gap-2 flex-wrap justify-center">
     {Array.from(
       { length: Math.ceil(displayedOrders.length / ordersPerPage) },
       (_, i) => (
@@ -624,7 +624,7 @@ const renderDashboard = () => (
 
     
 
-    {/* 📊 STATS */}
+    {/* 📊 STATS */}<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {stats.map((s, i) => (
         <div key={i} className="bg-white rounded-xl p-4 shadow-sm border">
@@ -643,19 +643,19 @@ const renderDashboard = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       {/* ORDERS BIG */}
-      <div className="lg:col-span-2 bg-white rounded-xl shadow p-4 h-[480px] flex flex-col">
+      <div className="lg:col-span-2 bg-white rounded-xl shadow p-4 min-h-[300px] md:h-[480px] flex flex-col">
         <h2 className="font-semibold mb-3">Orders</h2>
 
-        <div className="flex-1 overflow-y-auto">
+       <div className="flex-1 md:overflow-y-auto">
           <OrdersSection />
         </div>
       </div>
 
       {/* CHART SMALL */}
-      <div className="bg-white rounded-xl shadow p-4 h-[480px] flex flex-col">
+      <div className="bg-white rounded-xl shadow p-4 min-h-[300px] md:h-[480px] flex flex-col">
         <h2 className="font-semibold mb-3">Weekly Earnings</h2>
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart data={weeklyData}>
             <XAxis dataKey="day" />
             <Tooltip />
@@ -835,7 +835,6 @@ const NavigationSection = () => {
   return (
     <div className="space-y-4">
 
-      <h1 className="text-xl font-semibold">Navigation</h1>
 
       {currentOrder ? (
         <div className="bg-white p-4 rounded-xl shadow text-sm space-y-2">
@@ -1009,7 +1008,7 @@ const RatingsSection = () => {
               </button>
 
               {/* PAGE NUMBERS */}
-              <div className="flex gap-2">
+             <div className="flex gap-2 flex-wrap justify-center">
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button
                     key={i}
@@ -1238,7 +1237,7 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
         ← Prev
       </button>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap justify-center">
         {Array.from(
           { length: Math.ceil(deliveredOrders.length / ordersPerPage) },
           (_, i) => (
@@ -1367,9 +1366,9 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {mobileMenuOpen && (
   <div
-    className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
-    onClick={() => setMobileMenuOpen(false)}
-  />
+  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden"
+  onClick={() => setMobileMenuOpen(false)}
+/>
 )}
      {/* ✅ NEW SIDEBAR PASTE HERE */}
 <aside
@@ -1377,44 +1376,104 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
     fixed top-0 left-0 h-screen
     bg-white/90 backdrop-blur-md border-r border-gray-200
     flex flex-col z-40
-    transition-all duration-300 ease-in-out
+    transition-transform duration-300 ease-in-out
 
-    ${sidebarCollapsed ? "w-20" : "w-64"}
+    ${sidebarCollapsed ? "w-16 md:w-20" : "w-64"}
     ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
   `}
 >
 
   {/* LOGO */}
-  <div className="flex items-center justify-between px-5 py-4 border-b">
-    {!sidebarCollapsed && (
-    <span
+ <div
   className={`
-    text-xl font-bold text-orange-500 whitespace-nowrap
-    transition-all duration-300
-    ${sidebarCollapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"}
+    flex items-center border-b py-4
+    ${sidebarCollapsed ? "justify-center px-2" : "justify-between px-4"}
   `}
 >
-  Grabbie 🚀
-</span>
-    )}
+  {/* 📱 MOBILE HEADER */}
+{/* 📱 MOBILE HEADER */}
+{/* 📱 MOBILE HEADER */}
+<div className="md:hidden flex items-center justify-between px-4 py-3 border-b">
 
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-3">
+    <img
+      src={
+        profile?.profileImage
+          ? profile.profileImage
+          : "https://ui-avatars.com/api/?name=" + (profile?.name || "Driver")
+      }
+      alt="driver"
+      className="w-10 h-10 rounded-full object-cover border"
+    />
+
+    <div>
+      <p className="text-sm font-semibold">
+        {profile?.name || "Driver"}
+      </p>
+
+      <p className="text-xs text-gray-400">
+        {availability ? "🟢 Online" : "⚫ Offline"}
+      </p>
+    </div>
+  </div>
+
+  {/* RIGHT SIDE (FIXED SPACING) */}
+  <div className="pl-8">
     <button
-      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-      className="text-gray-500 hover:text-orange-500 text-lg"
+      onClick={() => setMobileMenuOpen(false)}
+      className="
+        w-9 h-9 flex items-center justify-center
+        rounded-lg
+        hover:bg-gray-100
+        transition
+      "
     >
-      {sidebarCollapsed ? "➡" : "⬅"}
+      ✕
     </button>
   </div>
 
+</div>
+  <span className="hidden md:block text-lg font-bold text-orange-500">
+  Grabbie
+</span>
+
+  {/* ✅ SIDEBAR TOGGLE (INSIDE SIDEBAR) */}
+<button
+  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+  className="
+    hidden md:flex items-center justify-center
+    w-8 h-8 rounded-md
+    hover:bg-orange-100 transition
+    text-gray-600
+  "
+>
+  {sidebarCollapsed ? "➡️" : "⬅️"}
+</button>
+
+</div>
+
+  {/* ❌ Desktop collapse */}
+  
+
   {/* AVAILABILITY */}
-  <div className="hidden md:block px-4 py-3 border-b">
+  <div className={`py-3 border-b ${sidebarCollapsed ? "px-2" : "px-4"}`}>
     {!sidebarCollapsed && (
       <p className="text-xs text-gray-400 mb-2">Availability</p>
     )}
-    <AvailabilityToggle
-      availability={availability}
-      onToggle={toggleAvailability}
-    />
+    {sidebarCollapsed ? (
+  <button
+    onClick={toggleAvailability}
+    className="w-full flex justify-center py-2"
+  >
+    {availability ? "🟢" : "⚫"}
+  </button>
+) : (
+  <AvailabilityToggle
+    availability={availability}
+    onToggle={toggleAvailability}
+  />
+)}
   </div>
 
   {/* MENU */}
@@ -1435,7 +1494,7 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
         transition-all duration-200 ease-in-out w-full text-left
 
         ${active
-          ? "bg-gradient-to-r from-orange-100 to-orange-50 text-orange-600 shadow-sm"
+          ? "bg-orange-100 text-orange-600 shadow-sm border-l-4 border-orange-500"
           : "text-gray-600 hover:bg-orange-50 hover:text-orange-500 hover:scale-[1.02]"
         }
       `}
@@ -1496,15 +1555,20 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
 
 </aside>
 
-      <main
+
+  <main
   className={`
+    relative
     flex-1 flex flex-col
-    ml-64
-    ${sidebarCollapsed ? "ml-20" : "ml-64"}
+    md:ml-64
+    ${sidebarCollapsed ? "md:ml-20" : "md:ml-64"}
     transition-all duration-300
   `}
 >
-    <div className="p-6 flex-1 overflow-hidden ml-0">
+
+  {/* ✅ 👉 PASTE BUTTON HERE */}
+  
+    <div className="p-3 md:p-6 flex-1 overflow-hidden ml-0">
   <div className="h-full overflow-y-auto pr-2">
 
     {/* 📱 MOBILE TOP BAR */}
@@ -1513,11 +1577,16 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
   {/* LEFT SIDE */}
   <div className="flex items-center gap-3">
     <button
-      onClick={() => setMobileMenuOpen(true)}
-      className="text-2xl"
-    >
-      ☰
-    </button>
+  onClick={() => setMobileMenuOpen(true)}
+  className="
+    flex items-center justify-center
+    w-10 h-10 rounded-lg
+    bg-white shadow-sm border
+    active:scale-95 transition
+  "
+>
+  <span className="text-lg">☰</span>
+</button>
 
     <h1 className="text-xl font-bold capitalize">
       {activeSection}
@@ -1526,29 +1595,50 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
 
   {/* RIGHT SIDE (ONLINE BUTTON) */}
   <button
-    onClick={toggleAvailability}
+  onClick={toggleAvailability}
+  className="
+    flex items-center gap-2
+    px-2 py-1 rounded-full
+    bg-white border border-gray-200
+    shadow-sm
+  "
+>
+  <span className="text-xs font-medium text-gray-600">
+    {availability ? "Online" : "Offline"}
+  </span>
+
+  <span
     className={`
-      px-3 py-1.5 rounded-full text-xs font-medium
-      flex items-center gap-2
-      ${availability
-        ? "bg-green-100 text-green-700"
-        : "bg-gray-200 text-gray-600"}
+      w-8 h-4 flex items-center rounded-full p-0.5
+      ${availability ? "bg-green-500" : "bg-gray-400"}
     `}
   >
     <span
-      className={`w-2 h-2 rounded-full ${
-        availability ? "bg-green-500" : "bg-gray-400"
-      }`}
+      className={`
+        w-3 h-3 bg-white rounded-full shadow transform transition-all
+        ${availability ? "translate-x-4" : "translate-x-0"}
+      `}
     />
-    {availability ? "Online" : "Offline"}
-  </button>
-
+  </span>
+</button>
 </div>
 
     {/* 💻 DESKTOP TITLE */}
-    <h1 className="hidden md:block text-2xl font-bold text-gray-800 mb-4 capitalize">
+ <div className="hidden md:flex items-center justify-between mb-4">
+
+  <div className="flex items-center gap-3">
+
+    {/* SIDEBAR TOGGLE */}
+   
+
+    {/* PAGE TITLE */}
+    <h1 className="text-2xl font-bold text-gray-800 capitalize">
       {activeSection}
     </h1>
+
+  </div>
+
+</div>
 
     {renderContent()}
     

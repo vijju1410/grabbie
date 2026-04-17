@@ -65,13 +65,15 @@ function AppWrapper() {
     if (role === "driver") return user.driverStatus === "rejected";
     return false;
   };
-
+const hideLayout =
+  location.pathname.startsWith("/vendor") ||
+  location.pathname.startsWith("/driver") ||
+  location.pathname.startsWith("/admin");
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
 
-{user?.role !== "vendor" && user?.role !== "driver" && user?.role !== "admin" && <Header />} 
-
+{!hideLayout && <Header />}
 {token && user?.role === "customer" && <Chatbot />}
       <Routes>
         {/* Public routes */}
@@ -126,7 +128,7 @@ function AppWrapper() {
           element={token && user?.role === "admin" ? <AdminDashboardPage /> : <Navigate to="/" />}
         />
       </Routes>
-{token && user?.role === "customer" && location.pathname !== "/checkout" && <Footer />}    </>
+{!hideLayout && location.pathname !== "/checkout" && <Footer />}    </>
   );
 }
 
