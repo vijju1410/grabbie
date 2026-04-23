@@ -179,12 +179,18 @@ if (io) {
       status: "Placed",
     });
 
-    await order.save();
-// 🔥 SEND ORDER EMAIL
+  await order.save();
+
+// 🔥 POPULATE ORDER (FIX UNDEFINED ISSUE)
+const populatedOrder = await Order.findById(order._id)
+  .populate("products.productId", "name price image");
+
+// get user
 const user = await User.findById(req.user._id);
 
+// send email with FULL DATA
 if (user?.email) {
-  sendOrderEmail(user.email, order);
+  sendOrderEmail(user.email, populatedOrder);
 }
     await Cart.findOneAndUpdate(
       { userId: req.user._id },
