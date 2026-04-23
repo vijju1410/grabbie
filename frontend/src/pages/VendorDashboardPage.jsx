@@ -706,8 +706,17 @@ const stats = useMemo(() => {
   const customerRating = `${vendorRating.avgRating} ⭐ (${vendorRating.totalReviews})`;
 
  const totalRevenue = orders
-  .filter(order => order.status === "Delivered") // ✅ IMPORTANT
-  .reduce((acc, order) => acc + Number(order.totalAmount || 0), 0);
+  .filter(order => order.status === "Delivered")
+  .reduce((acc, order) => {
+    const itemsTotal = order.charges?.itemsTotal || 0;
+
+    // 🔥 Example: 20% commission (you can change later)
+    const commission = itemsTotal * 0.2;
+
+    const vendorEarning = itemsTotal - commission;
+
+    return acc + vendorEarning;
+  }, 0);
 
   const formattedRevenue = totalRevenue.toLocaleString("en-IN", {
   minimumFractionDigits: 2,

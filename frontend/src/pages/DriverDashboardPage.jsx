@@ -1419,7 +1419,7 @@ const currentOrders = deliveredOrders.slice(indexOfFirst, indexOfLast);
   </div>
 
   {/* RIGHT SIDE (FIXED SPACING) */}
-  <div className="pl-8">
+  <div className="pl-14">
     <button
       onClick={() => setMobileMenuOpen(false)}
       className="

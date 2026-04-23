@@ -7,7 +7,7 @@ const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
 
 const PDFDocument = require("pdfkit");
-
+const sendOrderEmail = require("../utils/sendOrderEmail");
 // ✅ Multer memory storage (SAFE for free hosting)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -180,7 +180,12 @@ if (io) {
     });
 
     await order.save();
+// 🔥 SEND ORDER EMAIL
+const user = await User.findById(req.user._id);
 
+if (user?.email) {
+  sendOrderEmail(user.email, order);
+}
     await Cart.findOneAndUpdate(
       { userId: req.user._id },
       { products: [] }

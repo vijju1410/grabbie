@@ -205,121 +205,185 @@ const pendingOrders = orders.filter(o => o.status === "Placed").length;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
-        {sidebarOpen && (
-<div
-className="fixed inset-0 bg-black/40 z-30 md:hidden"
-onClick={() => setSidebarOpen(false)}
-></div>
+{sidebarOpen && (
+  <div
+    className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+    onClick={() => setSidebarOpen(false)}
+  />
 )}
         {/* ---------- SIDEBAR ---------- */}
 <aside
   className={`
-    fixed top-0 left-0 h-full w-64
-    bg-gray-50 border-r border-gray-200
-    shadow-xl
-    flex flex-col   // ✅ IMPORTANT
-    transition-all duration-300
+    fixed inset-y-0 left-0 h-screen 
+    bg-white border-r border-gray-200
+    shadow-xl flex flex-col
+    transform transition-all duration-300 ease-in-out
     ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
     md:translate-x-0
-    z-40
+    z-50
   `}
 >
 
-  {/* 🔷 LOGO + ADMIN */}
-<div className="px-4 py-5 border-b border-gray-100">
+  {/* 🔴 CLOSE BUTTON (ONLY MOBILE) */}
+<div className="px-4 py-3 border-b bg-gradient-to-r from-orange-50 to-white flex items-center justify-between">
 
-  {/* PROFILE HEADER (REPLACES LOGO) */}
+  {/* PROFILE */}
   <div className="flex items-center gap-3">
     <img
       src={admin?.profileImage || "https://via.placeholder.com/40"}
-      className="w-11 h-11 rounded-full object-cover border"
+      className="w-10 h-10 rounded-full object-cover border"
     />
-
     <div>
       <p className="text-sm font-semibold text-gray-800">
         {admin?.name || "Admin"}
       </p>
-      <p className="text-xs text-gray-500">Administrator</p>
+      <p className="text-xs text-gray-500">Super Admin</p>
     </div>
   </div>
 
+  {/* CLOSE BUTTON (ONLY MOBILE) */}
+  <button
+    onClick={() => setSidebarOpen(false)}
+    className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100"
+  >
+    <X size={20} />
+  </button>
+
 </div>
 
-  {/* 🔷 MENU (KEEP YOUR EXISTING ITEMS SAME) */}
-  <div className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+  {/* MENU */}
+ <div
+  className="flex-1 overflow-y-auto overscroll-contain"
+  style={{ WebkitOverflowScrolling: "touch" }}
+>
+  <div className="px-3 py-4 space-y-6">
 
-    {/* ⚠️ DO NOT CHANGE BELOW MENU ITEMS */}
-    <SidebarItem icon={<LayoutGrid />} label="Dashboard" active={active === "dashboard"} onClick={() => setActive("dashboard")} />
+  {/* MAIN */}
+  <div>
+    <p className="text-xs text-gray-400 px-3 mb-2">MAIN</p>
 
-    <SidebarItem icon={<Users />} label="Customers" active={active === "users"} onClick={() => setActive("users")} />
+    <SidebarItem icon={<LayoutGrid />} label="Dashboard"
+      active={active === "dashboard"}
+      onClick={() => { setActive("dashboard"); setSidebarOpen(false); }}
+    />
 
-    <SidebarItem icon={<Building2 />} label="Approved Vendors" active={active === "approvedVendors"} onClick={() => setActive("approvedVendors")} />
+    <SidebarItem icon={<LayoutGrid />} label="Orders"
+      active={active === "orders"}
+      onClick={() => { setActive("orders"); setSidebarOpen(false); }}
+    />
 
-    <SidebarItem icon={<Building2 />} label="Rejected Vendors" active={active === "rejectedVendors"} onClick={() => setActive("rejectedVendors")} />
-
-    <SidebarItem icon={<Building2 />} label="Pending Vendors" active={active === "vendors"} onClick={() => setActive("vendors")} />
-
-    <SidebarItem icon={<Truck />} label="Approved Drivers" active={active === "approvedDrivers"} onClick={() => setActive("approvedDrivers")} />
-
-    <SidebarItem icon={<Truck />} label="Rejected Drivers" active={active === "rejectedDrivers"} onClick={() => setActive("rejectedDrivers")} />
-
-    <SidebarItem icon={<Truck />} label="Pending Drivers" active={active === "pendingDrivers"} onClick={() => setActive("pendingDrivers")} />
-
-    <SidebarItem icon={<LayoutGrid />} label="Categories" active={active === "categories"} onClick={() => setActive("categories")} />
-
-    <SidebarItem icon={<Bell />} label="Notifications" active={active === "notifications"} onClick={() => setActive("notifications")} />
-<SidebarItem icon={<LayoutGrid />} label="Orders" active={active === "orders"} onClick={() => setActive("orders")} />
+    <SidebarItem icon={<Users />} label="Customers"
+      active={active === "users"}
+      onClick={() => { setActive("users"); setSidebarOpen(false); }}
+    />
   </div>
 
-  {/* 🔻 LOGOUT BUTTON */}
-  <div className="p-4 border-t border-gray-200">
+  {/* VENDORS */}
+  <div>
+    <p className="text-xs text-gray-400 px-3 mb-2">VENDORS</p>
+
+    <SidebarItem icon={<CheckCircle />} label="Approved Vendors"
+      active={active === "approvedVendors"}
+      onClick={() => { setActive("approvedVendors"); setSidebarOpen(false); }}
+    />
+
+    <SidebarItem icon={<Building2 />} label="Pending Vendors"
+      active={active === "vendors"}
+      onClick={() => { setActive("vendors"); setSidebarOpen(false); }}
+    />
+
+    <SidebarItem icon={<X />} label="Rejected Vendors"
+      active={active === "rejectedVendors"}
+      onClick={() => { setActive("rejectedVendors"); setSidebarOpen(false); }}
+    />
+  </div>
+
+  {/* DRIVERS */}
+  <div>
+    <p className="text-xs text-gray-400 px-3 mb-2">DRIVERS</p>
+
+    <SidebarItem icon={<CheckCircle />} label="Approved Drivers"
+      active={active === "approvedDrivers"}
+      onClick={() => { setActive("approvedDrivers"); setSidebarOpen(false); }}
+    />
+
+    <SidebarItem icon={<Truck />} label="Pending Drivers"
+      active={active === "pendingDrivers"}
+      onClick={() => { setActive("pendingDrivers"); setSidebarOpen(false); }}
+    />
+
+    <SidebarItem icon={<X />} label="Rejected Drivers"
+      active={active === "rejectedDrivers"}
+      onClick={() => { setActive("rejectedDrivers"); setSidebarOpen(false); }}
+    />
+  </div>
+
+  {/* OTHER */}
+  <div>
+    <p className="text-xs text-gray-400 px-3 mb-2">OTHER</p>
+
+    <SidebarItem icon={<LayoutGrid />} label="Categories"
+      active={active === "categories"}
+      onClick={() => { setActive("categories"); setSidebarOpen(false); }}
+    />
+
+    <SidebarItem icon={<Bell />} label="Notifications"
+      active={active === "notifications"}
+      onClick={() => { setActive("notifications"); setSidebarOpen(false); }}
+    />
+  </div>
+
+</div>  {/* LOGOUT */}
+  <div className="p-4 border-t bg-white sticky bottom-0">
     <button
       onClick={() => {
         localStorage.clear();
         window.location.href = "/login";
       }}
-      className="w-full bg-red-500 text-white py-2 rounded-xl font-semibold hover:bg-red-600 transition"
+      className="w-full bg-red-500 text-white py-2 rounded-xl"
     >
       Logout
     </button>
   </div>
-
+  </div>
 </aside>
-
         {/* ---------- MAIN CONTENT ---------- */}
-    <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64">
-<div className="flex flex-wrap justify-between items-center gap-2 mb-6">
-
-<button
-className="md:hidden mr-2"
-onClick={() => setSidebarOpen(true)}
+   <main
+  className={`flex-1 p-4 sm:p-6 md:p-8 md:ml-64 h-screen transition-all ${
+    sidebarOpen
+      ? "overflow-hidden pointer-events-none select-none"
+      : "overflow-y-auto"
+  }`}
 >
-<Menu className="w-6 h-6"/>
-</button>       
-     <h1 className="text-lg sm:text-2xl font-bold text-slate-800">
-              {active === "dashboard" ? "Dashboard"
-                : active === "users" ? "Customers"
-                  : active === "vendors" ? "Pending Vendors"
-                    : active === "allVendors" ? "All Vendors"
-                      : active === "drivers" ? "Delivery Partners"
-                        : active === "categories" ? "Categories"
-                        : active === "orders" ? "Orders"
-                          : "Notifications"}
-            </h1>
+<div className="flex items-center justify-between mb-4">
 
-            <button
-              onClick={() => setActive("notifications")}
-              className="relative p-2 rounded hover:bg-slate-100"
-              title="Notifications"
-            >
-              <Bell className="w-6 h-6 text-slate-700" />
-              {notes.filter(n => !n.read).length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {notes.filter(n => !n.read).length}
-                </span>
-              )}
-            </button>
-          </div>
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-3">
+    <button
+      className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+      onClick={() => setSidebarOpen(true)}
+    >
+      <Menu className="w-6 h-6" />
+    </button>
+
+    <h1 className="text-lg sm:text-xl font-semibold text-slate-800">
+      {active === "dashboard" ? "Dashboard"
+        : active === "users" ? "Customers"
+        : active === "vendors" ? "Pending Vendors"
+        : active === "orders" ? "Orders"
+        : "Notifications"}
+    </h1>
+  </div>
+
+  {/* RIGHT SIDE */}
+  <button
+    onClick={() => setActive("notifications")}
+    className="relative p-2 rounded-lg hover:bg-gray-100"
+  >
+    <Bell className="w-6 h-6 text-slate-700" />
+  </button>
+
+</div>
 {!loading && active === "orders" && (
   <SectionCard title="All Orders">
     {/* 🔥 ORDER STATS */}
@@ -369,7 +433,9 @@ onClick={() => setSidebarOpen(true)}
   </div>
 ) : (
       <>
-<table className="min-w-full bg-white rounded-xl overflow-hidden shadow-sm">          <thead className="bg-slate-100">
+<div className="w-full overflow-x-auto">
+  <table className="min-w-[700px] w-full bg-white rounded-xl overflow-hidden shadow-sm">
+           <thead className="bg-slate-100">
             <tr>
               <Th>Customer</Th>
               <Th>Vendor</Th>
@@ -428,6 +494,7 @@ onClick={() => setSidebarOpen(true)}
             ))}
           </tbody>
         </table>
+        </div>
         {selectedOrder && (
   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
     <div className="bg-white p-6 rounded-xl w-[500px] relative">
@@ -473,14 +540,14 @@ onClick={() => setSidebarOpen(true)}
           {!loading && active === "dashboard" && (
             <div className="space-y-6">
               {/* 🔥 BUSINESS STATS */}
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <StatCard title="Total Orders" value={orders.length} color="from-orange-500 to-orange-400" />
   <StatCard title="Revenue" value={`₹${totalRevenue.toFixed(2)}`} color="from-pink-500 to-pink-400" />
   <StatCard title="Platform Revenue" value={`₹${platformRevenue.toFixed(2)}`} color="from-indigo-500 to-indigo-400" />
 </div>
 
 {/* 👥 USERS */}
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <StatCard title="Customers" value={users.length} color="from-blue-500 to-blue-400" />
   <StatCard title="Vendors" value={vendors.length} color="from-purple-500 to-purple-400" />
   <StatCard title="Drivers" value={drivers.length} color="from-green-500 to-green-400" />
@@ -1070,25 +1137,32 @@ const SidebarItem = ({ icon, label, active, onClick }) => (
   <button
     onClick={onClick}
     className={`
-      w-full flex items-center gap-3 px-4 py-2.5 rounded-xl
+      relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl
       text-sm font-medium transition-all duration-200 group
 
       ${active
-        ? "bg-orange-50 text-orange-600"
-        : "text-gray-600 hover:bg-gray-50 hover:text-orange-500"
+        ? "bg-orange-100 text-orange-600 shadow-sm"
+        : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"
       }
     `}
   >
+    {/* LEFT ACTIVE BAR */}
+    {active && (
+      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-orange-500 rounded-r"></span>
+    )}
+
     {/* ICON */}
     <div className={`
       transition-all
-      ${active ? "text-orange-600" : "text-gray-400 group-hover:text-orange-500"}
+      ${active
+        ? "text-orange-600 scale-110"
+        : "text-gray-400 group-hover:text-orange-500 group-hover:scale-110"}
     `}>
       {React.cloneElement(icon, { size: 18 })}
     </div>
 
     {/* TEXT */}
-    <span>{label}</span>
+    <span className="truncate">{label}</span>
   </button>
 );
  const StatCard = ({ title, value, color }) => (
