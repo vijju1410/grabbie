@@ -7,8 +7,16 @@ const orderItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: true
   },
+
   quantity: { type: Number, required: true },
+
+  // 🔥 ADD THESE 3 LINES HERE
+  price: { type: Number, default: 0 },
+  finalPrice: { type: Number, default: 0 },
+  discount: { type: Number, default: 0 },
+
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
   vendorSnapshot: {
     address: {
       addressLine1: { type: String },
@@ -24,7 +32,7 @@ const orderItemSchema = new mongoose.Schema({
     },
     phone: { type: String }
   }
-  // removed per-item charges here to keep a single order-level charges object
+
 });
 
 const noteSchema = new mongoose.Schema({

@@ -529,34 +529,62 @@ const directionsService = new window.google.maps.DirectionsService();
 )}
           
                     {/* PRODUCTS */}
-                    {order.products.map((item, i) => (
-  <div key={i} className="flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 hover:bg-gray-100 transition">
-  <div className="flex items-center gap-3">
-    <img
-  src={
-    item.productId?.image
-      ? item.productId.image
-      : "https://via.placeholder.com/100"
-  }
-  alt={item.productId?.name}
-  className="w-12 h-12 object-cover rounded-lg"
-/>
+                    {order.products.map((item, i) => {
+  const original = item.price || item.productId?.price || 0;
+  const final = item.finalPrice || original;
+  const discount = item.discount || 0;
 
-    <div>
-      <p className="font-medium text-gray-800">
-        {item.productId?.name || "Product"}
-      </p>
-      <p className="text-sm text-gray-500">
-        ₹{item.productId?.price} × {item.quantity}
+  return (
+    <div
+      key={i}
+      className="flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 hover:bg-gray-100 transition"
+    >
+      <div className="flex items-center gap-3">
+        <img
+          src={
+            item.productId?.image
+              ? item.productId.image
+              : "https://via.placeholder.com/100"
+          }
+          alt={item.productId?.name}
+          className="w-12 h-12 object-cover rounded-lg"
+        />
+
+        <div>
+          <p className="font-medium text-gray-800">
+            {item.productId?.name || "Product"}
+          </p>
+
+          <p className="text-sm text-gray-500">
+            {discount > 0 ? (
+              <>
+                <span className="line-through text-gray-400">
+                  ₹{original}
+                </span>{" "}
+                <span className="font-semibold text-black">
+                  ₹{final}
+                </span>{" "}
+                × {item.quantity}
+              </>
+            ) : (
+              <>₹{original} × {item.quantity}</>
+            )}
+          </p>
+
+          {discount > 0 && (
+            <p className="text-green-600 text-xs">
+              ₹{discount} OFF
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p className="font-semibold text-gray-800">
+        ₹{(final * item.quantity).toFixed(2)}
       </p>
     </div>
-  </div>
-
-  <p className="font-semibold text-gray-800">
-    ₹{((item.productId?.price || 0) * item.quantity).toFixed(2)}
-  </p>
-</div>
-))}
+  );
+})}
 
 
 {/* ================= PRICE DETAILS ================= */}

@@ -142,18 +142,24 @@ if (io) {
         const vendorId = prod.vendorId || null;
         const vendor = vendorId ? await User.findById(vendorId).lean() : null;
 
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          vendorId: vendor ? vendor._id : null,
-          vendorSnapshot: vendor
-            ? {
-                businessName: vendor.businessName || "",
-                businessAddress: vendor.businessAddress || "",
-                businessPhone: vendor.businessPhone || "",
-              }
-            : null,
-        };
+     return {
+  productId: item.productId,
+  quantity: item.quantity,
+
+  // 🔥 ADD THESE (MOST IMPORTANT)
+  price: item.price || 0,
+  finalPrice: item.finalPrice || item.price || 0,
+  discount: item.discount || 0,
+
+  vendorId: vendor ? vendor._id : null,
+  vendorSnapshot: vendor
+    ? {
+        businessName: vendor.businessName || "",
+        businessAddress: vendor.businessAddress || "",
+        businessPhone: vendor.businessPhone || "",
+      }
+    : null,
+};
       })
     );
 
@@ -475,22 +481,67 @@ doc.font("Helvetica");
 let y = doc.y + 6;
 
 order.products.forEach((item) => {
-  const total = item.productId.price * item.quantity;
+  const name = item.productId?.name || "Product";
 
-  doc.text(item.productId.name, 40, y, { width: 220 });
-  doc.text(item.quantity.toString(), 280, y, { width: 60, align: "center" });
-  doc.text(`Rs:${item.productId.price.toFixed(2)}`, 360, y, {
-    width: 80,
-    align: "right",
-  });
-  doc.text(`Rs:.${total.toFixed(2)}`, 460, y, {
-    width: 80,
-    align: "right",
-  });
+  // ✅ USE CORRECT FIELDS (THIS FIXES EVERYTHING)
+  const original = item.price || item.productId?.price || 0;
+  const final = item.finalPrice || original;
+  const discount = item.discount || 0;
+  const qty = item.quantity || 1;
 
-  y += 22;
+  const total = final * qty;
+
+  // NAME
+  doc.text(name, 40, y, { width: 220 });
+
+  // QTY
+  doc.text(qty.toString(), 280, y, { width: 60, align: "center" });
+
+  // PRICE COLUMN
+  if (discount > 0) {
+    doc
+      .fillColor("#9ca3af")
+      .text(`₹${original.toFixed(2)}`, 360, y, {
+        width: 80,
+        align: "right",
+      });
+
+    y += 12;
+
+    doc
+      .fillColor("black")
+      .text(`₹${final.toFixed(2)}`, 360, y, {
+        width: 80,
+        align: "right",
+      });
+  } else {
+    doc.text(`₹${original.toFixed(2)}`, 360, y, {
+      width: 80,
+      align: "right",
+    });
+  }
+
+  // TOTAL
+  doc
+    .fillColor("black")
+    .text(`₹${total.toFixed(2)}`, 460, y, {
+      width: 80,
+      align: "right",
+    });
+
+  // DISCOUNT LABEL
+  if (discount > 0) {
+    y += 12;
+    doc
+      .fillColor("green")
+      .fontSize(9)
+      .text(`₹${discount.toFixed(2)} OFF`, 40, y);
+
+    doc.fillColor("black").fontSize(10);
+  }
+
+  y += 25;
 });
-
 
     doc.moveDown(2);
 

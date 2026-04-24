@@ -341,11 +341,29 @@ for (const item of items) {
       await axios.post(
   `${API}/api/orders/place`,
         {
-          products: items.map(item => {
+   products: items.map(item => {
   const p = item.productId || item.product;
+  const offer = getOffer(p._id);
+
+  let finalPrice = p.price;
+  let discount = 0;
+
+  if (offer) {
+    if (offer.discountType === "percent") {
+      discount = (p.price * offer.discountValue) / 100;
+    } else {
+      discount = offer.discountValue;
+    }
+
+    finalPrice = p.price - discount;
+  }
+
   return {
     productId: p._id,
     quantity: item.quantity,
+    price: p.price,        // ✅ original price
+    finalPrice: finalPrice,// ✅ discounted price
+    discount: discount     // ✅ saved amount
   };
 }),
           totalAmount: charges.grandTotal,

@@ -14,7 +14,12 @@ const sendOrderEmail = async (userEmail, order) => {
     // 🎯 Generate PDF
     const pdfBuffer = await generateInvoicePDF(order);
 
-    // 🎨 PROFESSIONAL HTML (Swiggy style)
+    // 🔥 CALCULATE TOTAL SAVINGS (NEW - ADDED ONLY)
+    const totalSavings = (order.products || []).reduce((sum, item) => {
+      return sum + (item.discount || 0) * (item.quantity || 1);
+    }, 0);
+
+    // 🎨 PROFESSIONAL HTML (YOUR ORIGINAL + UPGRADED)
     const html = `
       <div style="font-family: Arial; background:#f9fafb; padding:20px;">
         
@@ -41,19 +46,46 @@ const sendOrderEmail = async (userEmail, order) => {
               <tr style="background:#f3f4f6;">
                 <th style="padding:8px; text-align:left;">Item</th>
                 <th style="padding:8px; text-align:center;">Qty</th>
+                <th style="padding:8px; text-align:right;">Price</th>
               </tr>
 
-              ${(order.products || []).map(p => `
-                <tr>
-                  <td style="padding:8px;">
-                    ${p.productId?.name || "Product"}
-                  </td>
-                  <td style="padding:8px; text-align:center;">
-                    ${p.quantity || 1}
-                  </td>
-                </tr>
-              `).join("")}
+              ${(order.products || []).map(p => {
+                const original = p.price || 0;
+                const final = p.finalPrice || original;
+                const discount = p.discount || 0;
+
+                return `
+                  <tr>
+                    <td style="padding:8px;">
+                      ${p.productId?.name || "Product"}
+                      ${discount > 0 
+                        ? `<br/><span style="color:green;font-size:12px;">₹${discount.toFixed(2)} OFF</span>` 
+                        : ""}
+                    </td>
+
+                    <td style="padding:8px; text-align:center;">
+                      ${p.quantity || 1}
+                    </td>
+
+                    <td style="padding:8px; text-align:right;">
+                      ${
+                        discount > 0
+                          ? `<span style="text-decoration:line-through;color:#9ca3af;">₹${original.toFixed(2)}</span><br/><b>₹${final.toFixed(2)}</b>`
+                          : `₹${original.toFixed(2)}`
+                      }
+                    </td>
+                  </tr>
+                `;
+              }).join("")}
             </table>
+
+            ${
+              totalSavings > 0
+                ? `<p style="color:green;font-weight:bold; margin-top:10px;">
+                    🎉 You saved ₹${totalSavings.toFixed(2)} on this order!
+                  </p>`
+                : ""
+            }
 
             <h3 style="margin-top:20px;">💰 Price Details</h3>
 
@@ -96,12 +128,11 @@ const sendOrderEmail = async (userEmail, order) => {
     `;
 
     await transporter.sendMail({
-      from: `"Grabbie" <${process.env.EMAIL}>`, // ✅ IMPORTANT FIX
+      from: `"Grabbie" <${process.env.EMAIL}>`,
       to: userEmail,
       subject: "🛒 Order Confirmed - Grabbie",
       html,
 
-      // 📎 ATTACH PDF
       attachments: [
         {
           filename: `invoice-${order._id}.pdf`,

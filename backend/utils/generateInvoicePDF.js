@@ -30,10 +30,10 @@ const generateInvoicePDF = (order) => {
       /* ================= CUSTOMER ================= */
       doc.fontSize(12).text("Bill To:", { underline: true });
       doc.fontSize(10);
-      doc.text(order.deliveryDetails.fullName || "");
-      doc.text(order.deliveryDetails.email || "");
+      doc.text(order.deliveryDetails?.fullName || "");
+      doc.text(order.deliveryDetails?.email || "");
       doc.text(
-        `${order.deliveryDetails.addressLine1 || ""}, ${order.deliveryDetails.city || ""}, ${order.deliveryDetails.state || ""} - ${order.deliveryDetails.postalCode || ""}`
+        `${order.deliveryDetails?.addressLine1 || ""}, ${order.deliveryDetails?.city || ""}, ${order.deliveryDetails?.state || ""} - ${order.deliveryDetails?.postalCode || ""}`
       );
       doc.moveDown();
 
@@ -57,25 +57,70 @@ const generateInvoicePDF = (order) => {
 
       order.products.forEach((item) => {
         const name = item.productId?.name || "Product";
-        const price = item.productId?.price || 0;
+
+        // 🔥 NEW (USE DISCOUNT DATA)
+        const original = item.price || item.productId?.price || 0;
+        const final = item.finalPrice || original;
+        const discount = item.discount || 0;
         const qty = item.quantity || 1;
-        const total = price * qty;
+
+        const total = final * qty;
 
         doc.text(name, 40, y, { width: 220 });
         doc.text(qty.toString(), 280, y, { width: 60, align: "center" });
-        doc.text(`₹${price.toFixed(2)}`, 360, y, {
-          width: 80,
-          align: "right",
-        });
-        doc.text(`₹${total.toFixed(2)}`, 460, y, {
-          width: 80,
-          align: "right",
-        });
 
-        y += 22;
+        // 🔥 ORIGINAL PRICE (STRIKE)
+        if (discount > 0) {
+          doc
+            .fillColor("#9ca3af")
+            .text(`₹${original.toFixed(2)}`, 360, y, {
+              width: 80,
+              align: "right",
+            });
+        } else {
+          doc.text(`₹${original.toFixed(2)}`, 360, y, {
+            width: 80,
+            align: "right",
+          });
+        }
+
+        // 🔥 FINAL PRICE
+        doc
+          .fillColor("black")
+          .text(`₹${total.toFixed(2)}`, 460, y, {
+            width: 80,
+            align: "right",
+          });
+
+        // 🔥 DISCOUNT LINE
+        if (discount > 0) {
+          y += 15;
+          doc
+            .fillColor("green")
+            .fontSize(9)
+            .text(`₹${discount.toFixed(2)} OFF`, 40, y);
+
+          doc.fillColor("black").fontSize(10);
+        }
+
+        y += 25;
       });
 
       doc.moveDown(2);
+
+      /* ================= SAVINGS (NEW) ================= */
+      const totalSavings = order.products.reduce((sum, item) => {
+        return sum + (item.discount || 0) * (item.quantity || 1);
+      }, 0);
+
+      if (totalSavings > 0) {
+        doc
+          .fillColor("green")
+          .fontSize(11)
+          .text(`🎉 You saved ₹${totalSavings.toFixed(2)} on this order!`);
+
+        doc.fillColor("black");
+      }
 
       /* ================= CHARGES ================= */
       const boxY = doc.y;
@@ -105,7 +150,7 @@ const generateInvoicePDF = (order) => {
         .text("Grand Total:", 345, boxY + 140);
 
       doc.text(
-        `₹${(charges.grandTotal || order.totalAmount).toFixed(2)}`,
+        `₹${Number(charges.grandTotal || order.totalAmount).toFixed(2)}`,
         470,
         boxY + 140,
         { align: "right" }
