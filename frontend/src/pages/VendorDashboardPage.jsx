@@ -1685,7 +1685,7 @@ className="bg-white text-orange-600 px-5 py-2 rounded-lg w-full md:w-auto"
   
 
         {/* Main Content */}
-    <div className="flex-1 ml-0 md:ml-64 p-3 pt-6 md:pt-8 md:p-8">
+    <div className="flex-1 ml-0 md:ml-64 w-full max-w-full overflow-x-hidden p-3 pt-6 md:pt-8 md:p-8">
       
       {/* 🔥 GLOBAL MOBILE HEADER */}
 {/* 🔥 GLOBAL MOBILE HEADER */}

@@ -233,6 +233,7 @@ const handleVerifyOtp = async () => {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 
                 value={email}
         onChange={(e) => {
@@ -265,7 +266,7 @@ className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-ora
       id="password"
       name="password"
       type={showPassword ? "text" : "password"}
-      
+      autoComplete="current-password"
       value={password}
    onChange={(e) => {
   setPassword(e.target.value);
