@@ -187,6 +187,19 @@ if (io) {
 
   await order.save();
 
+// ✅ ADD THIS BLOCK (COD PAYMENT SAVE)
+const Payment = require("../models/Payment");
+
+if (paymentMethod === "cod") {
+  await Payment.create({
+    orderId: order._id,
+    userId: req.user._id,
+    amount: totalAmount,
+    method: "cod",
+    status: "pending"
+  });
+}
+
 // 🔥 POPULATE ORDER (FIX UNDEFINED ISSUE)
 const populatedOrder = await Order.findById(order._id)
   .populate("products.productId", "name price image");
@@ -360,7 +373,12 @@ router.put("/:orderId/deliver", protect, async (req, res) => {
     order.status = "Delivered";
 
     await order.save();
+const Payment = require("../models/Payment");
 
+await Payment.findOneAndUpdate(
+  { orderId: order._id },
+  { status: "success" }
+);
     // emit targeted update to vendors + customer
     await emitToVendorsAndCustomer(req, order._id, "orderUpdated", { status: "Delivered" });
 

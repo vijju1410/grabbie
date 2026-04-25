@@ -33,16 +33,20 @@ router.post("/create-order", async (req, res) => {
 });
 
 // VERIFY PAYMENT
-router.post("/verify", (req, res) => {
+const Payment = require("../models/Payment");
+
+router.post("/verify", async (req, res) => {
   try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
+      orderId, 
+      userId,
+      amount
     } = req.body;
 
-    const body =
-      razorpay_order_id + "|" + razorpay_payment_id;
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
@@ -50,13 +54,36 @@ router.post("/verify", (req, res) => {
       .digest("hex");
 
     if (expectedSignature === razorpay_signature) {
+
+      // ✅ SAVE PAYMENT
+      await Payment.create({
+        orderId,
+        userId,
+        amount,
+        method: "online",
+        status: "success",
+        razorpay_order_id,
+        razorpay_payment_id
+      });
+
       return res.json({ success: true });
     }
 
     res.status(400).json({ success: false });
+
   } catch (err) {
     res.status(500).json({ message: "Verification failed" });
   }
 });
+router.get("/all", async (req, res) => {
+  try {
+    const payments = await Payment.find()
+      .populate("orderId")
+      .populate("userId");
 
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch payments" });
+  }
+});
 module.exports = router;

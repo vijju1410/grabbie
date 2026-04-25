@@ -67,13 +67,21 @@ try {
     contact: formData.phone,
   },
 
-  handler: async (response) => {
-    try {
-      const verifyRes = await axios.post(
-  `${API}/api/payment/verify`,
-  response
-);
+ handler: async (response) => {
+  try {
+    const verifyRes = await axios.post(
+      `${API}/api/payment/verify`,
+      {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
 
+        // ✅ ADD THESE
+        orderId: "TEMP", // ⚠️ explained below
+        userId: JSON.parse(localStorage.getItem("user"))?._id,
+        amount: grandTotal
+      }
+    );
 
       if (!verifyRes.data.success) {
         Swal.fire({ 

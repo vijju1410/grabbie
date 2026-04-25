@@ -1,7 +1,7 @@
   import React, { useEffect, useMemo, useState } from "react";
   import axios from "axios";
   import { 
-    Bell, CheckCircle, Users, Building2, Truck, LayoutGrid, X, Menu, Edit2, Trash2 
+    Bell,DollarSign, CheckCircle, Users, Building2, Truck, LayoutGrid, X, Menu, Edit2, Trash2 
   } from "lucide-react";
 
   import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -32,6 +32,9 @@ const API = process.env.REACT_APP_API_URL;
     const [approvedVendors, setApprovedVendors] = useState([]);
     const [selectedDriver, setSelectedDriver] = useState(null);
     const [customerSearch, setCustomerSearch] = useState("");
+    const [payments, setPayments] = useState([]);
+    const [paymentSearch, setPaymentSearch] = useState("");
+const [paymentFilter, setPaymentFilter] = useState("all");
   const [rejectedVendors, setRejectedVendors] = useState([]);
   const [approvedDrivers, setApprovedDrivers] = useState([]);
   const [rejectedDrivers, setRejectedDrivers] = useState([]);
@@ -141,7 +144,16 @@ const fetchOrders = async () => {
     setPendingDrivers(prev => prev.filter(d => d._id !== id));
   };
 
-
+const fetchPayments = async () => {
+  try {
+    const res = await axios.get(`${API}/api/payment/all`, {
+      headers: authHeader(),
+    });
+    setPayments(res.data || []);
+  } catch (err) {
+    console.error("Failed to fetch payments", err);
+  }
+};
     useEffect(() => {
       setLoading(true);
       Promise.all([
@@ -161,8 +173,17 @@ const fetchOrders = async () => {
       if (active === "vendors") fetchPendingVendors();
       if (active === "allVendors") fetchAllVendors();
       if (active === "categories") fetchCategories();
+      if (active === "payments") fetchPayments();
     }, [active]);
+useEffect(() => {
+  if (active !== "payments") return;
 
+  const interval = setInterval(() => {
+    fetchPayments();
+  }, 5000); // ⏱ every 5 seconds
+
+  return () => clearInterval(interval); // cleanup
+}, [active]);
     // ---------- VENDOR APPROVE/REJECT ----------
     const approveVendor = async (id) => {
       await axios.put(`${API}/api/admin/approve-vendor/${id}`, {}, { headers: authHeader() });
@@ -202,7 +223,16 @@ const filteredOrders =
     ? orders
     : orders.filter(o => o.status === orderFilter);
 const pendingOrders = orders.filter(o => o.status === "Placed").length;
+const filteredPayments = payments.filter(p => {
+  const matchesSearch =
+    (p.userId?.name || "").toLowerCase().includes(paymentSearch.toLowerCase()) ||
+    (p.orderId?._id || "").toLowerCase().includes(paymentSearch.toLowerCase());
 
+  const matchesFilter =
+    paymentFilter === "all" || p.method === paymentFilter;
+
+  return matchesSearch && matchesFilter;
+});
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
 {sidebarOpen && (
@@ -271,7 +301,10 @@ const pendingOrders = orders.filter(o => o.status === "Placed").length;
       active={active === "orders"}
       onClick={() => { setActive("orders"); setSidebarOpen(false); }}
     />
-
+<SidebarItem icon={<DollarSign />} label="Payments"
+  active={active === "payments"}
+  onClick={() => { setActive("payments"); setSidebarOpen(false); }}
+/>
     <SidebarItem icon={<Users />} label="Customers"
       active={active === "users"}
       onClick={() => { setActive("users"); setSidebarOpen(false); }}
@@ -367,12 +400,18 @@ const pendingOrders = orders.filter(o => o.status === "Placed").length;
     </button>
 
     <h1 className="text-lg sm:text-xl font-semibold text-slate-800">
-      {active === "dashboard" ? "Dashboard"
-        : active === "users" ? "Customers"
-        : active === "vendors" ? "Pending Vendors"
-        : active === "orders" ? "Orders"
-        : "Notifications"}
-    </h1>
+  {active === "dashboard" ? "Dashboard"
+    : active === "users" ? "Customers"
+    : active === "vendors" ? "Pending Vendors"
+    : active === "orders" ? "Orders"
+    : active === "payments" ? "Payments"
+    : active === "categories" ? "Categories"
+    : active === "approvedVendors" ? "Approved Vendors"
+    : active === "rejectedVendors" ? "Rejected Vendors"
+    : active === "approvedDrivers" ? "Approved Drivers"
+    : active === "rejectedDrivers" ? "Rejected Drivers"
+    : "Notifications"}
+</h1>
   </div>
 
   {/* RIGHT SIDE */}
@@ -610,7 +649,116 @@ const pendingOrders = orders.filter(o => o.status === "Placed").length;
 
             </div>
           )}
+{!loading && active === "payments" && (
+  <SectionCard title="Payment History">
 
+    {payments.length === 0 ? (
+      <div className="text-center py-10 text-gray-500">
+        🚫 No payment transactions found
+      </div>
+    ) : (
+      <div className="overflow-x-auto">
+        {/* 🔥 PAYMENT SUMMARY */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+  <div className="bg-blue-500 text-white p-4 rounded-xl shadow">
+    <p className="text-sm opacity-80">Total Payments</p>
+    <p className="text-xl font-bold">
+      {payments.reduce((sum, p) => sum + (p.amount || 0), 0)}
+    </p>
+  </div>
+
+  <div className="bg-green-500 text-white p-4 rounded-xl shadow">
+    <p className="text-sm opacity-80">Successful</p>
+    <p className="text-xl font-bold">
+      {payments.filter(p => p.status === "success").length}
+    </p>
+  </div>
+
+  <div className="bg-yellow-500 text-white p-4 rounded-xl shadow">
+    <p className="text-sm opacity-80">Pending</p>
+    <p className="text-xl font-bold">
+      {payments.filter(p => p.status === "pending").length}
+    </p>
+  </div>
+
+</div>
+{/* 🔍 SEARCH + FILTER */}
+<div className="flex flex-col sm:flex-row gap-3 mb-4">
+
+  {/* SEARCH */}
+  <input
+    type="text"
+    placeholder="Search by user or order ID..."
+    value={paymentSearch}
+    onChange={(e) => setPaymentSearch(e.target.value)}
+    className="border px-4 py-2 rounded-xl flex-1"
+  />
+
+  {/* FILTER */}
+  <select
+    value={paymentFilter}
+    onChange={(e) => setPaymentFilter(e.target.value)}
+    className="border px-3 py-2 rounded-xl"
+  >
+    <option value="all">All</option>
+    <option value="cod">COD</option>
+    <option value="online">Online</option>
+  </select>
+
+</div>
+
+        <table className="min-w-[700px] w-full bg-white rounded-xl shadow-sm">
+
+          <thead className="bg-slate-100">
+            <tr>
+              <Th>Order ID</Th>
+              <Th>User</Th>
+              <Th>Amount</Th>
+              <Th>Method</Th>
+              <Th>Status</Th>
+              <Th>Date</Th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredPayments.map(p => (
+              <tr key={p._id} className="border-t hover:bg-gray-50">
+
+                <Td>{p.orderId?._id?.slice(-6) || "N/A"}</Td>
+
+                <Td>{p.userId?.name || "User"}</Td>
+
+                <Td>₹{p.amount}</Td>
+
+                <Td className="capitalize">{p.method}</Td>
+
+                <Td>
+                  <span className={`px-2 py-1 text-xs rounded
+                    ${p.status === "success"
+                      ? "bg-green-100 text-green-700"
+                      : p.status === "pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"}
+                  `}>
+                    {p.status}
+                  </span>
+                </Td>
+
+                <Td>
+                  {new Date(p.createdAt).toLocaleDateString()}
+                </Td>
+
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
+      </div>
+    )}
+
+  </SectionCard>
+)}
           {/* ---------- CUSTOMERS ---------- */}
           {!loading && active === "users" && (
             <SectionCard title="Customers">
